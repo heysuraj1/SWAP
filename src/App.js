@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Chart } from "react-charts";
 
 const App = () => {
+  const [input1, setInput1] = useState("");
+
   const data = React.useMemo(
     () => [
       {
@@ -139,21 +141,160 @@ const App = () => {
                     Swap
                   </h4>
                   <div className="form-group m-4">
-                    <input
-                      style={{ padding: 20 }}
-                      type="email"
-                      className="form-control"
-                      aria-describedby="emailHelp"
-                      placeholder="Enter BNB"
-                    />
+                    <div
+                      style={{
+                        padding: 20,
+                        backgroundColor: "#0A0112",
+                        borderRadius: 40,
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: 15 }}>
+                        <div
+                          style={{
+                            padding: 10,
+                            backgroundColor: "#1A132F",
+                            borderRadius: 20,
+                            display: "flex",
+                            gap: 10,
+                            paddingTop: 20,
+                          }}
+                        >
+                          <img
+                            src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+                            className="img-fluid"
+                            style={{ width: 20, height: 20 }}
+                            alt=""
+                          />
+
+                          <h6 className="text-white">BNB</h6>
+                        </div>
+                        <h6 style={{ color: "#7F818A" }} className="mt-3">
+                          You Pay
+                        </h6>
+                      </div>
+
+                      <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                        <input
+                          onChange={(e) => {
+                            setInput1(e.target.value);
+                          }}
+                          style={{
+                            padding: 10,
+                            backgroundColor: "#0A0112",
+                            border: "none",
+                            color: "white",
+                            outline: "none",
+                            width: "100%",
+                          }}
+                          type="text"
+                          placeholder="Enter BNB"
+                        />
+                        <div>
+                          <h6 className="mt-3" style={{ color: "#69818B" }}>
+                            Balance:
+                          </h6>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+
+                  <div style={{ marginLeft: 40 }}>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width={35}
+                      style={{
+                        color: "white",
+                        backgroundColor: "#0A0112",
+                        padding: 5,
+                        borderRadius: 50,
+                      }}
+                      height={35}
+                      fill="currentColor"
+                      className="bi bi-arrow-down-up"
+                      viewBox="0 0 16 16"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"
+                      />
+                    </svg>
+                  </div>
+
                   <div className="form-group m-4">
-                    <input
-                      style={{ padding: 20 }}
-                      type="password"
-                      className="form-control"
-                      placeholder="Enter PPM"
-                    />
+                    <div
+                      style={{
+                        padding: 20,
+                        backgroundColor: "#0A0112",
+                        borderRadius: 40,
+                      }}
+                    >
+                      <div style={{ display: "flex", gap: 15 }}>
+                        <div
+                          style={{
+                            padding: 10,
+                            backgroundColor: "#1A132F",
+                            borderRadius: 20,
+                            display: "flex",
+                            gap: 10,
+                            paddingTop: 20,
+                          }}
+                        >
+                          <img
+                            src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+                            className="img-fluid"
+                            style={{ width: 20, height: 20 }}
+                            alt=""
+                          />
+
+                          <h6 className="text-white">BNB</h6>
+                        </div>
+                        <h6 style={{ color: "#7F818A" }} className="mt-3">
+                          You Receive
+                        </h6>
+                      </div>
+
+                      <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                        <input
+                          onChange={(e) => {
+                            setInput1(e.target.value);
+                          }}
+                          style={{
+                            padding: 10,
+                            backgroundColor: "#0A0112",
+                            border: "none",
+                            color: "white",
+                            outline: "none",
+                            width: "100%",
+                          }}
+                          type="text"
+                          placeholder="Enter BNB"
+                          disabled
+                          value={0.0}
+                        />
+                        <div>
+                          <h6 className="mt-3" style={{ color: "#69818B" }}>
+                            Balance:
+                          </h6>
+                        </div>
+                      </div>
+                    </div>
+                    {input1.length !== 0 ? (
+                      <div
+                        style={{
+                          backgroundColor: "#1A132F",
+                          padding: 20,
+                          marginTop: 30,
+                          borderRadius: 30,
+                        }}
+                      >
+                        <h6 style={{ color: "#B9B8B8" }}>GAS Price</h6>
+                        <h5 style={{ color: "#B9B8B8" }}>
+                          High (204.45 - 273.92 Gwei)
+                        </h5>
+                      </div>
+                    ) : (
+                      <></>
+                    )}
                   </div>
                   <div className="container ">
                     <button
