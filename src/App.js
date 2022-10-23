@@ -3,6 +3,16 @@ import { Chart } from "react-charts";
 
 const App = () => {
   const [input1, setInput1] = useState("");
+  const [optionOneLogo, setOptionOneLogo] = useState(
+    "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+  );
+  const [optionTwoLogo, setOptionTwoLogo] = useState(
+    "https://lykacoin.net/pinksale.png"
+  );
+  const [optionOne, setOptionOne] = useState("BNB");
+  const [optionTwo, setOptionTwo] = useState("LYKA");
+  const [opone, setOpone] = useState(true);
+  const [optwo, setOptwo] = useState(false);
 
   const data = React.useMemo(
     () => [
@@ -27,6 +37,28 @@ const App = () => {
     ],
     []
   );
+
+  const handleChangeOne = () => {
+    setOptionOneLogo("https://lykacoin.net/pinksale.png");
+    setOptionTwoLogo(
+      "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+    );
+    setOptionOne("LYKA");
+    setOptionTwo("BNB");
+    setOpone(false);
+    setOptwo(true);
+  };
+
+  const handleChangeTwo = () => {
+    setOptionTwoLogo("https://lykacoin.net/pinksale.png");
+    setOptionOneLogo(
+      "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+    );
+    setOptionTwo("LYKA");
+    setOptionOne("BNB");
+    setOptwo(false);
+    setOpone(true);
+  };
 
   return (
     <>
@@ -160,13 +192,13 @@ const App = () => {
                           }}
                         >
                           <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+                            src={optionOneLogo}
                             className="img-fluid"
                             style={{ width: 20, height: 20 }}
                             alt=""
                           />
 
-                          <h6 className="text-white">BNB</h6>
+                          <h6 className="text-white">{optionOne}</h6>
                         </div>
                         <h6 style={{ color: "#7F818A" }} className="mt-3">
                           You Pay
@@ -199,25 +231,51 @@ const App = () => {
                   </div>
 
                   <div style={{ marginLeft: 40 }}>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width={35}
-                      style={{
-                        color: "white",
-                        backgroundColor: "#0A0112",
-                        padding: 5,
-                        borderRadius: 50,
-                      }}
-                      height={35}
-                      fill="currentColor"
-                      className="bi bi-arrow-down-up"
-                      viewBox="0 0 16 16"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"
-                      />
-                    </svg>
+                    {opone ? (
+                      <svg
+                        onClick={handleChangeOne}
+                        xmlns="http://www.w3.org/2000/svg"
+                        width={35}
+                        style={{
+                          color: "white",
+                          backgroundColor: "#0A0112",
+                          padding: 5,
+                          borderRadius: 50,
+                          cursor: "pointer",
+                        }}
+                        height={35}
+                        fill="currentColor"
+                        className="bi bi-arrow-down-up"
+                        viewBox="0 0 16 16"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"
+                        />
+                      </svg>
+                    ) : (
+                      <svg
+                        onClick={handleChangeTwo}
+                        xmlns="http://www.w3.org/2000/svg"
+                        width={35}
+                        style={{
+                          color: "white",
+                          backgroundColor: "#0A0112",
+                          padding: 5,
+                          borderRadius: 50,
+                          cursor: "pointer",
+                        }}
+                        height={35}
+                        fill="currentColor"
+                        className="bi bi-arrow-down-up"
+                        viewBox="0 0 16 16"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"
+                        />
+                      </svg>
+                    )}
                   </div>
 
                   <div className="form-group m-4">
@@ -240,13 +298,13 @@ const App = () => {
                           }}
                         >
                           <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+                            src={optionTwoLogo}
                             className="img-fluid"
                             style={{ width: 20, height: 20 }}
                             alt=""
                           />
 
-                          <h6 className="text-white">BNB</h6>
+                          <h6 className="text-white">{optionTwo}</h6>
                         </div>
                         <h6 style={{ color: "#7F818A" }} className="mt-3">
                           You Receive
