@@ -9,14 +9,11 @@ import { abis } from './abis'
 import { getGasPrice, getLyakaPrice, getSwapPrice, swap } from "./routerService";
 import ConfirmTransactionModal from "./components/ConfirmTransactionModal";
 import Settings from "./components/Settings";
-import { FACTORY_ADDRESS, INIT_CODE_HASH } from '@pancakeswap-libs/sdk-v2'
-// import { GasPriceOracle } from 'gas-price-oracle'
-import { pack, keccak256 } from '@ethersproject/solidity'
-import { getCreate2Address } from '@ethersproject/address'
 import axios from "axios";
 import { Toaster } from 'react-hot-toast'
 import useToast from "./useToast";
 import PulseLoader  from "react-spinners/PulseLoader"
+import LineChart from "./components/LineChart";
 
 
 
@@ -32,78 +29,92 @@ const App = () => {
   const [direction, setDirection] = useState(false)
   const [slippage, setSlippage] = useState('1')
   const [gasPrice, setGasPrice] = useState(undefined)
-  const [pairAddress, setPairAddress] = useState('')
   const [loadingTx, setLoadingTx] = useState(false)
-  const [timeFrame, setTimeFrame] = useState('D')
+  const [timeFrame, setTimeFrame] = useState(24)
+  const [f, setF] = useState('D')
   const [chartData, setChartData] = useState([])
   const [chartDataLoading, setChartDataLoading] = useState(false)
   const [laykaPrice, setLaykaPrice] = useState(0)
+  // const [chartData, setTempData] = useState([])
 
 
   const laykaLogo = "https://lykacoin.net/pinksale.png"
   const busdLogo = "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
-  const endPoint = 'https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2'
 
   const { toastError, toastSuccess } = useToast()
 
-  const getSubQueryForBlock = () => {
-    var ts = 1666888200
-    var tsYesterday = ts - (24 * 3600)
-    var s = ''
-    for (let i = tsYesterday; i < ts; i = i + 3600) {
-      const str = `t${i}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${i}, timestamp_lt: ${i+600} }) {
-        number
-      }`
-      s = s + ',' + str
-    }
-    return s.slice(1)
-  }
-
-  const getSubQueryForToken = async (tokenAddress) => {
+  const getBlockData = async (frame) => {
     const blockEndPoint = "https://api.thegraph.com/subgraphs/name/pancakeswap/blocks"
-    const subQForBlock = getSubQueryForBlock()
-     const q1 = `
-     query blocks {
-       ${subQForBlock}
-     }
-     `
-     const dataBlock = await axios.post(blockEndPoint, {query: q1})
-    //  console.log(dataBlock.data.data, 'lll');
-    var s = ''
-    for(const key in dataBlock.data.data) {
-      const value = dataBlock.data.data[key][0].number
-      const str = `${key}:token(id:"${tokenAddress}", block: { number: ${value} }) { 
-        derivedBNB
-      }
-      `
-      s = s + ',' + str
+    const currentTimeStamp = Math.round(new Date().getTime() / 1000)
+    const timeBoforeTime = currentTimeStamp - (frame * 3600)
+    let qstring = ''
+    const inc = {
+      24: 3600,
+      168: 86400,
+      720: 86400,
+      8760: 86400 
     }
+    for (let i = timeBoforeTime; i < currentTimeStamp; i+= inc[frame]) {
+      qstring += `t${i}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${i}, timestamp_lt: ${i+600} }) { number },`
+    }
+    const query = `
+      query blocks {
+        ${qstring}
+      }
+    `
+      const result = await axios.post(blockEndPoint, {query})
+      return result.data.data
+  }
 
-    return s.slice(1)
+
+  const getTokenPriceData = async (frame, tokenAddress) => {
+    const subgraphEndpoint = 'https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2'
+    const blockData = await getBlockData(frame)
+    let qstring = ''
+    for (const k in blockData) {
+      const key = k
+      const value = blockData[k][0]['number']
+      
+      qstring += `${key}:token(id:"${tokenAddress}", block: { number: ${value} }) { derivedUSD },`
+    }
+    const query = `
+      query derivedTokenPriceData {
+        ${qstring}
+      }
+    `
+    const result = await axios.post(subgraphEndpoint, {query})
+    return result.data.data
 
   }
+
 
   useEffect(() => {
     (async () => {
-    
-      const subGraphEndPoint = "https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2"
-      const subQuery = await getSubQueryForToken('0x26844Ffd91648e8274598e6e18921a3E5Dc14ADe')
-      const q1 = `
-      query derivedTokenPriceData {
-        ${subQuery}
+      setChartDataLoading(true)
+      const laykaData = await getTokenPriceData(timeFrame, addresses.LAYKA.toLowerCase())
+      const dataList = []
+      for (const k in laykaData) {
+        const key = parseInt(k.slice(1))
+        const value = parseFloat(laykaData[k]['derivedUSD'])
+        if(timeFrame === 24) {
+          const newKey = new Date(key*1000).toTimeString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        } else if(timeFrame === 24*7) {
+          const newKey = new Date(key*1000).toLocaleDateString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        } else if(timeFrame === 24*30) {
+          const newKey = new Date(key*1000).toLocaleDateString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        } else {
+          const newKey = new Date(key*1000).toLocaleDateString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        }
+        // dataList.push({time: key, value: value})
       }
-      `
-      console.log(q1);
-      const data = await axios.post(subGraphEndPoint, {query: q1})
-      console.log(data, 'dDDD');
-     
+      setChartData(dataList)
+      setChartDataLoading(false)
     })()
-  }, [])
-
-
-
-
-
+  }, [timeFrame])
 
 
   useEffect(() => {
@@ -112,69 +123,7 @@ const App = () => {
   }, [])
 
 
-  const getChartData = async ( frame) => {
-    try {
-      const obj = {
-        'D': 24,
-        'W': 24 * 7,
-        'M': 24 * 30,
-        'Y': 24 * 365
-      }
-      var ts = Math.round(new Date().getTime() / 1000);
-      var tsFrame = ts - (obj[frame] * 3600)
-      var p1Address = '0x871842c0b72851d2873878e2f7145b7a9d8dbc55'
-      var p2Address = '0x58f876857a02d6762e0101bb5c46a8c1ed44dc16'
-      const query = `
-      query pairDayDatas($startTime: Int!, $address: Bytes!) {
-        pairDayDatas(
-          where: { pairAddress: $address, date_gt: $startTime }
-          orderBy: date
-          orderDirection: asc
-        ) {
-          date
-          pairAddress {
-            token1Price
-          }
-        }
-      }
-    `
-    const data = await axios.post(endPoint, {
-      query,
-      variables: {
-        startTime: tsFrame,
-        address: p1Address
-      }
-    })
-
-    var arr = []
-    for (let i = 0; i < data.data.data.pairDayDatas.length; i ++) {
-      var temp = []
-      temp[0] = data.data.data.pairDayDatas[i].date
-      temp[1] = data.data.data.pairDayDatas[i].pairAddress.token1Price
-      arr.push(temp)
-    }
-
-
-    return arr
-
-
-    } catch (e) {
-      console.log(e);
-      setChartDataLoading(false)
-    }
-  }
-
-  useEffect(() => {
-
-    (async () => {
-      setChartDataLoading(true)
-      const data = await getChartData(timeFrame)
-      setChartData(data)
-      setChartDataLoading(false)
-   })()
-
-
-  }, [timeFrame])
+ 
 
   useEffect(() => {
     return () => {
@@ -207,24 +156,7 @@ const App = () => {
     return balance / decimal
   }
 
-
-  const data = React.useMemo(
-    () => [
-      {
-        label: "BNB",
-        data: chartData
-      },
-    ],
-    [chartData]
-  );
-
-  const axes = React.useMemo(
-    () => [
-      { primary: true, type: "linear", position: "bottom" },
-      { type: "linear", position: "left" },
-    ],
-    []
-  );
+  
 
   const handleSubmit = event => {
     event.preventDefault();
@@ -403,10 +335,10 @@ const App = () => {
                 </h1>
               </div>
 
-              <button onClick={() => setTimeFrame('D')} disabled={timeFrame === 'D'}>24H</button>
-              <button onClick={() => setTimeFrame('W')} disabled={timeFrame === 'W'}>1W</button>
-              <button onClick={() => setTimeFrame('M')} disabled={timeFrame === 'M'}>1M</button>
-              <button onClick={() => setTimeFrame('Y')} disabled={timeFrame === 'Y'}>1Y</button>
+              <button onClick={() => {setTimeFrame(24); setF('D')}} disabled={timeFrame === 24}>24H</button>
+              <button onClick={() => {setTimeFrame(24*7); setF('W')}} disabled={timeFrame === 24*7}>1W</button>
+              <button onClick={() => {setTimeFrame(24*30); setF('M')}} disabled={timeFrame === 24*30}>1M</button>
+              <button onClick={() => {setTimeFrame(24*365); setF('Y')}} disabled={timeFrame === 24*365}>1Y</button>
 
 
               <div
@@ -415,7 +347,11 @@ const App = () => {
                   height: "400px",
                 }}
               >
-                {chartDataLoading ? <PulseLoader /> : <Chart data={data} axes={axes} />}
+                {chartDataLoading ? (
+                  <PulseLoader size={30} color={'#ffffff'} />
+                ) : (
+                  <LineChart chartData={chartData} f={f} />
+                )}
               </div>
             </div>
             <div className="col-sm-6 mt-5">
