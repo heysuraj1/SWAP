@@ -1,66 +1,239 @@
-import React, { useState } from "react";
+import { useWeb3React } from "@web3-react/core";
+import React, { useEffect, useMemo, useState } from "react";
 import { Chart } from "react-charts";
-import SettingsData from "./Components/SettingsData";
+import Web3 from "web3";
+import { ethers } from 'ethers'
+import { injected } from "./connector";
+import { addresses } from './contracts'
+import { abis } from './abis'
+import { getGasPrice, getLyakaPrice, getSwapPrice, swap } from "./routerService";
+import ConfirmTransactionModal from "./components/ConfirmTransactionModal";
+import Settings from "./components/Settings";
+import axios from "axios";
+import { Toaster } from 'react-hot-toast'
+import useToast from "./useToast";
+import PulseLoader  from "react-spinners/PulseLoader"
+import LineChart from "./components/LineChart";
+
+
 
 const App = () => {
-  const [input1, setInput1] = useState("");
-  const [optionOneLogo, setOptionOneLogo] = useState(
-    "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
-  );
-  const [optionTwoLogo, setOptionTwoLogo] = useState(
-    "https://lykacoin.net/pinksale.png"
-  );
-  const [optionOne, setOptionOne] = useState("BNB");
-  const [optionTwo, setOptionTwo] = useState("LYKA");
-  const [opone, setOpone] = useState(true);
-  const [optwo, setOptwo] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
 
-  const data = React.useMemo(
-    () => [
-      {
-        label: "BNB",
-        data: [
-          [0, 1],
-          [1, 2],
-          [2, 4],
-          [3, 2],
-          [4, 7],
-        ],
-      },
-    ],
-    []
-  );
+  const { activate, active, account, library } = useWeb3React()
+  const [laykaAmount, setLaykaAmount] = useState('')
+  const [busdAmount, setBusdAmount] = useState('')
+  const [laykaBalance, setLaykaBalance] = useState(0)
+  const [busdBalance, setBusdBalance] = useState(0)
+  const [showGasPopup, setShowGasPopup] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [direction, setDirection] = useState(false)
+  const [slippage, setSlippage] = useState('1')
+  const [gasPrice, setGasPrice] = useState(undefined)
+  const [loadingTx, setLoadingTx] = useState(false)
+  const [timeFrame, setTimeFrame] = useState(24)
+  const [f, setF] = useState('D')
+  const [chartData, setChartData] = useState([])
+  const [chartDataLoading, setChartDataLoading] = useState(false)
+  const [laykaPrice, setLaykaPrice] = useState(0)
+  // const [chartData, setTempData] = useState([])
 
-  const axes = React.useMemo(
-    () => [
-      { primary: true, type: "linear", position: "bottom" },
-      { type: "linear", position: "left" },
-    ],
-    []
-  );
 
-  const handleChangeOne = () => {
-    setOptionOneLogo("https://lykacoin.net/pinksale.png");
-    setOptionTwoLogo(
-      "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
-    );
-    setOptionOne("LYKA");
-    setOptionTwo("BNB");
-    setOpone(false);
-    setOptwo(true);
-  };
+  const laykaLogo = "https://lykacoin.net/pinksale.png"
+  const busdLogo = "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
 
-  const handleChangeTwo = () => {
-    setOptionTwoLogo("https://lykacoin.net/pinksale.png");
-    setOptionOneLogo(
-      "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
-    );
-    setOptionTwo("LYKA");
-    setOptionOne("BNB");
-    setOptwo(false);
-    setOpone(true);
-  };
+  const { toastError, toastSuccess } = useToast()
+
+  const getBlockData = async (frame) => {
+    const blockEndPoint = "https://api.thegraph.com/subgraphs/name/pancakeswap/blocks"
+    const currentTimeStamp = Math.round(new Date().getTime() / 1000)
+    const timeBoforeTime = currentTimeStamp - (frame * 3600)
+    let qstring = ''
+    const inc = {
+      24: 3600,
+      168: 86400,
+      720: 86400,
+      8760: 86400 
+    }
+    for (let i = timeBoforeTime; i < currentTimeStamp; i+= inc[frame]) {
+      qstring += `t${i}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${i}, timestamp_lt: ${i+600} }) { number },`
+    }
+    const query = `
+      query blocks {
+        ${qstring}
+      }
+    `
+      const result = await axios.post(blockEndPoint, {query})
+      return result.data.data
+  }
+
+
+  const getTokenPriceData = async (frame, tokenAddress) => {
+    const subgraphEndpoint = 'https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2'
+    const blockData = await getBlockData(frame)
+    let qstring = ''
+    for (const k in blockData) {
+      const key = k
+      const value = blockData[k][0]['number']
+      
+      qstring += `${key}:token(id:"${tokenAddress}", block: { number: ${value} }) { derivedUSD },`
+    }
+    const query = `
+      query derivedTokenPriceData {
+        ${qstring}
+      }
+    `
+    const result = await axios.post(subgraphEndpoint, {query})
+    return result.data.data
+
+  }
+
+
+  useEffect(() => {
+    (async () => {
+      setChartDataLoading(true)
+      const laykaData = await getTokenPriceData(timeFrame, addresses.LAYKA.toLowerCase())
+      const dataList = []
+      for (const k in laykaData) {
+        const key = parseInt(k.slice(1))
+        const value = parseFloat(laykaData[k]['derivedUSD'])
+        if(timeFrame === 24) {
+          const newKey = new Date(key*1000).toTimeString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        } else if(timeFrame === 24*7) {
+          const newKey = new Date(key*1000).toLocaleDateString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        } else if(timeFrame === 24*30) {
+          const newKey = new Date(key*1000).toLocaleDateString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        } else {
+          const newKey = new Date(key*1000).toLocaleDateString()
+          dataList.push({time: newKey.slice(0,5), value: value})
+        }
+        // dataList.push({time: key, value: value})
+      }
+      setChartData(dataList)
+      setChartDataLoading(false)
+    })()
+  }, [timeFrame])
+
+
+  useEffect(() => {
+    getLyakaPrice()
+    .then(resp => setLaykaPrice(resp))
+  }, [])
+
+
+ 
+
+  useEffect(() => {
+    return () => {
+      setLaykaAmount('')
+      setBusdAmount('')
+    }
+  }, [])
+
+
+  useEffect(() => {
+    (async () => {
+      if (active) {
+        const laykaBal = await fetchTokenBalance(addresses.LAYKA, abis.LAYKA, account)
+        const busdBal = await fetchTokenBalance(addresses.BUSD, abis.BUSD, account)
+        setLaykaBalance(laykaBal)
+        setBusdBalance(busdBal)
+      }
+    })()
+  }, [active])
+
+  const loadContract = (provider, abi, address) => {
+    const web3 = new Web3(provider)
+    return new web3.eth.Contract(abi, address)
+  }
+
+  const fetchTokenBalance = async (tokenContract, tokenAbi, account) => {
+    const decimal = 18
+    const contract = loadContract(library.provider, tokenAbi, tokenContract)
+    const balance = await contract.methods.balanceOf(account).call()
+    return balance / decimal
+  }
+
+  
+
+  const handleSubmit = event => {
+    event.preventDefault();
+  }
+
+  const [loading, setLoading] = useState(false)
+  const [tx, setTx] = useState(undefined)
+
+  useEffect(() => {
+    if (!direction && !laykaAmount.length) {
+      setBusdAmount('')
+    } else if (direction && !busdAmount.length) {
+      setLaykaAmount('')
+    }
+  }, [direction, laykaAmount, busdAmount])
+
+  const getPrice = (value) => {
+    !direction ? setLaykaAmount(value) : setBusdAmount(value)
+    setShowGasPopup(true)
+    if (!value.length) {
+      direction ? setLaykaAmount('') : setBusdAmount('')
+      setShowGasPopup(false)
+    } else {
+      setLoading(true)
+      getSwapPrice(direction, value, slippage)
+        .then(resp => {
+          direction ? setLaykaAmount(resp) : setBusdAmount(resp)
+          setLoading(false)
+        })
+    }
+  }
+
+  const swapToken = async () => {
+    setLoadingTx(true)
+    const value = !direction ? laykaAmount : busdAmount
+    swap(direction, value, library.provider, account, slippage, toastError, toastSuccess)
+      .then(resp => {
+        setTx(resp)
+        setLoadingTx(false)
+        setTimeout(() => {
+          toggleTransactionModal()
+        }, 200)
+      })
+      .catch(e => {
+        setLoadingTx(false)
+      })
+
+  }
+
+
+
+  const toggleTransactionModal = () => {
+    let attr = document.createElement('button')
+    attr.setAttribute('data-bs-toggle', 'modal')
+    attr.setAttribute('data-bs-target', '#exampleModal')
+    document.body.appendChild(attr)
+    attr.click()
+    attr.remove()
+  }
+
+  const handleOnclick = () => {
+    if (!direction) {
+      if (laykaBalance < laykaAmount && active) {
+        toastError('Insufficient funds')
+      } else {
+        !active ? activate(injected) : toggleTransactionModal()
+      }
+    } else {
+      if (busdBalance < busdAmount && active) {
+        toastError('Insufficient funds')
+      } else {
+        !active ? activate(injected) : toggleTransactionModal()
+      }
+    }
+  }
+
+
 
   return (
     <>
@@ -142,134 +315,31 @@ const App = () => {
           </div>
         </nav>
 
-        <div
-          className="modal fade"
-          id="exampleModal"
-          tabIndex={-1}
-          aria-labelledby="exampleModalLabel"
-          aria-hidden="true"
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div style={{ borderRadius: 40 }} className="modal-content">
-              <div
-                style={{ backgroundColor: "#120D20", borderRadius: 30 }}
-                className="modal-body p-5"
-              >
-                <div style={{ textAlign: "right" }}>
-                  <svg
-                    data-bs-toggle="modal"
-                    data-bs-target="#exampleModal"
-                    xmlns="http://www.w3.org/2000/svg"
-                    style={{ color: "white", cursor: "pointer" }}
-                    width={16}
-                    height={16}
-                    fill="currentColor"
-                    className="bi bi-x-lg"
-                    viewBox="0 0 16 16"
-                  >
-                    <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z" />
-                  </svg>
-                </div>
-                <h3
-                  style={{ fontWeight: "bold" }}
-                  className="text-center text-white mb-4"
-                >
-                  Confirm Swap
-                </h3>
-                <p className="text-center text-white">
-                  By clicking approve you are confirming this transaction
-                </p>
+        <ConfirmTransactionModal
+          fromToken={!direction ? 'LAYKA' : 'BUSD'}
+          toToken={direction ? 'LAYKA' : 'BUSD'}
+          fromValue={!direction ? laykaAmount : busdAmount}
+          toValue={direction ? laykaAmount : busdAmount}
+          swapToken={swapToken}
+          loadingTx={loadingTx}
+        />
 
-                <h6 className="text-white">You Pay</h6>
-
-                <div className="row">
-                  <div className="col">
-                    <h5 className="text-white">6</h5>
-                  </div>
-                  <div className="col">
-                    <h5 className="text-white" style={{ textAlign: "right" }}>
-                      BNB
-                    </h5>
-                  </div>
-                </div>
-
-                <div className="row">
-                  <div className="col">
-                    <hr style={{ color: "white" }} />
-                  </div>
-                  <div className="col">
-                    <div style={{ textAlign: "center" }}>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        style={{ color: "white" }}
-                        width={26}
-                        height={26}
-                        fill="currentColor"
-                        className="bi bi-arrow-down"
-                        viewBox="0 0 16 16"
-                      >
-                        <path
-                          fillRule="evenodd"
-                          d="M8 1a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L7.5 13.293V1.5A.5.5 0 0 1 8 1z"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="col">
-                    <hr style={{ color: "white" }} />
-                  </div>
-                </div>
-
-                <h6 className="text-white mt-3">You Receive</h6>
-
-                <div className="row">
-                  <div className="col">
-                    <h5 className="text-white">4209.4031327845296</h5>
-                  </div>
-                  <div className="col">
-                    <h5 className="text-white" style={{ textAlign: "right" }}>
-                      LYKA
-                    </h5>
-                  </div>
-                </div>
-
-                <p
-                  style={{ fontSize: 15 }}
-                  className="text-center text-white container mt-5"
-                >
-                  Output is estimated. You will receive at least
-                  4209.4031327845296 PPM or the transition will revert
-                </p>
-
-                <div className="container ">
-                  <button
-                    style={{
-                      backgroundColor: "#5D4DA1",
-                      width: "100%",
-                      padding: 20,
-                      borderRadius: 30,
-                      fontWeight: "bold",
-                      fontSize: 20,
-                    }}
-                    className="btn btn-primary"
-                  >
-                    Confirm Swap
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div className="container">
           <div className="row">
             <div className="col-sm-6 mt-5">
               <div>
-                <h4 className="text-white">PPM/BNB</h4>
+                <h4 className="text-white">LAYKA/BUSD</h4>
                 <h1 style={{ fontWeight: "bold" }} className="text-white">
-                  $0.53
+                  ${laykaPrice}
                 </h1>
               </div>
+
+              <button onClick={() => {setTimeFrame(24); setF('D')}} disabled={timeFrame === 24}>24H</button>
+              <button onClick={() => {setTimeFrame(24*7); setF('W')}} disabled={timeFrame === 24*7}>1W</button>
+              <button onClick={() => {setTimeFrame(24*30); setF('M')}} disabled={timeFrame === 24*30}>1M</button>
+              <button onClick={() => {setTimeFrame(24*365); setF('Y')}} disabled={timeFrame === 24*365}>1Y</button>
+
 
               <div
                 style={{
@@ -277,18 +347,23 @@ const App = () => {
                   height: "400px",
                 }}
               >
-                <Chart data={data} axes={axes} />
+                {chartDataLoading ? (
+                  <PulseLoader size={30} color={'#ffffff'} />
+                ) : (
+                  <LineChart chartData={chartData} f={f} />
+                )}
               </div>
             </div>
             <div className="col-sm-6 mt-5">
+
               {showSettings ? (
-                <SettingsData setShowSettings={setShowSettings} />
+                <Settings setShowSettings={setShowSettings} setSlippage={setSlippage} slippage={slippage} />
               ) : (
                 <div
                   className="container p-5"
                   style={{ backgroundColor: "#120D20" }}
                 >
-                  <form>
+                  <form onSubmit={handleSubmit}>
                     <h4
                       style={{ fontSize: 40 }}
                       className="text-center text-white mt-3"
@@ -315,26 +390,25 @@ const App = () => {
                             }}
                           >
                             <img
-                              src={optionOneLogo}
+                              src={!direction ? laykaLogo : busdLogo}
                               className="img-fluid"
                               style={{ width: 20, height: 20 }}
                               alt=""
                             />
 
-                            <h6 className="text-white">{optionOne}</h6>
+                            <h6 className="text-white">{!direction ? 'LAYKA' : 'BUSD'}</h6>
                           </div>
                           <h6 style={{ color: "#7F818A" }} className="mt-3">
                             You Pay
                           </h6>
                         </div>
 
-                        <div
-                          style={{ display: "flex", gap: 10, marginTop: 12 }}
-                        >
+                        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
                           <input
                             onChange={(e) => {
-                              setInput1(e.target.value);
+                              getPrice(e.target.value)
                             }}
+                            value={!direction ? laykaAmount : busdAmount}
                             style={{
                               padding: 10,
                               backgroundColor: "#0A0112",
@@ -343,64 +417,38 @@ const App = () => {
                               outline: "none",
                               width: "100%",
                             }}
-                            type="text"
-                            placeholder="Enter BNB"
+                            type="number"
+                            placeholder="Enter Amount"
                           />
                           <div>
                             <h6 className="mt-3" style={{ color: "#69818B" }}>
-                              Balance:
+                              Balance: {!direction ? laykaBalance : busdBalance}
                             </h6>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div style={{ marginLeft: 40 }}>
-                      {opone ? (
-                        <svg
-                          onClick={handleChangeOne}
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={35}
-                          style={{
-                            color: "white",
-                            backgroundColor: "#0A0112",
-                            padding: 5,
-                            borderRadius: 50,
-                            cursor: "pointer",
-                          }}
-                          height={35}
-                          fill="currentColor"
-                          className="bi bi-arrow-down-up"
-                          viewBox="0 0 16 16"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          onClick={handleChangeTwo}
-                          xmlns="http://www.w3.org/2000/svg"
-                          width={35}
-                          style={{
-                            color: "white",
-                            backgroundColor: "#0A0112",
-                            padding: 5,
-                            borderRadius: 50,
-                            cursor: "pointer",
-                          }}
-                          height={35}
-                          fill="currentColor"
-                          className="bi bi-arrow-down-up"
-                          viewBox="0 0 16 16"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"
-                          />
-                        </svg>
-                      )}
+                    <div style={{ marginLeft: 40, cursor: 'pointer' }} onClick={() => setDirection(!direction)}>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width={35}
+                        style={{
+                          color: "white",
+                          backgroundColor: "#0A0112",
+                          padding: 5,
+                          borderRadius: 50,
+                        }}
+                        height={35}
+                        fill="currentColor"
+                        className="bi bi-arrow-down-up"
+                        viewBox="0 0 16 16"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z"
+                        />
+                      </svg>
                     </div>
 
                     <div className="form-group m-4">
@@ -423,47 +471,44 @@ const App = () => {
                             }}
                           >
                             <img
-                              src={optionTwoLogo}
+                              src={direction ? laykaLogo : busdLogo}
                               className="img-fluid"
                               style={{ width: 20, height: 20 }}
                               alt=""
                             />
 
-                            <h6 className="text-white">{optionTwo}</h6>
+                            <h6 className="text-white">{direction ? 'LAYKA' : 'BUSD'}</h6>
                           </div>
                           <h6 style={{ color: "#7F818A" }} className="mt-3">
                             You Receive
                           </h6>
                         </div>
 
-                        <div
-                          style={{ display: "flex", gap: 10, marginTop: 12 }}
-                        >
-                          <input
-                            onChange={(e) => {
-                              setInput1(e.target.value);
-                            }}
-                            style={{
-                              padding: 10,
-                              backgroundColor: "#0A0112",
-                              border: "none",
-                              color: "white",
-                              outline: "none",
-                              width: "100%",
-                            }}
-                            type="text"
-                            placeholder="Enter BNB"
-                            disabled
-                            value={0.0}
-                          />
+                        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                          {loading ? 'loading' : (
+                            <input
+                              style={{
+                                padding: 10,
+                                backgroundColor: "#0A0112",
+                                border: "none",
+                                color: "white",
+                                outline: "none",
+                                width: "100%",
+                              }}
+                              type="text"
+                              placeholder="Enter BNB"
+                              disabled
+                              value={direction ? laykaAmount : busdAmount}
+                            />
+                          )}
                           <div>
                             <h6 className="mt-3" style={{ color: "#69818B" }}>
-                              Balance:
+                              Balance: {direction ? laykaBalance : busdBalance}
                             </h6>
                           </div>
                         </div>
                       </div>
-                      {input1.length !== 0 ? (
+                      {showGasPopup ? (
                         <div
                           style={{
                             backgroundColor: "#1A132F",
@@ -476,8 +521,12 @@ const App = () => {
                             <div className="col">
                               <h6 style={{ color: "#B9B8B8" }}>GAS Price</h6>
                               <h5 style={{ color: "#B9B8B8" }}>
+                                {gasPrice}
                                 High (204.45 - 273.92 Gwei)
                               </h5>
+                              <h6 style={{ color: "#B9B8B8" }}>Slippage Tolerance</h6>
+                              <h6 style={{ color: "#B9B8B8" }}>{`${slippage} %`}</h6>
+
                             </div>
                             <div className="col">
                               <div style={{ textAlign: "right" }}>
@@ -504,29 +553,36 @@ const App = () => {
                         <></>
                       )}
                     </div>
+                    <div className="container ">
+                      <button
+                        type="submit"
+                        disabled={active ? !direction ? !laykaAmount.length || loading : !busdAmount.length || loading : false}
+                        onClick={() => { handleOnclick() }}
+                        style={{
+                          backgroundColor: "#5D4DA1",
+                          width: "100%",
+                          padding: 20,
+                          borderRadius: 30,
+                          fontWeight: "bold",
+                          fontSize: 20,
+                        }}
+                        className="btn btn-primary"
+                      >
+                        {!active ? 'Connet Wallet' : !direction ? !laykaAmount.length ? 'Enter Amount' : 'Swap' : !busdAmount.length ? 'Enter Amount' : 'Swap'}
+                      </button>
+                    </div>
                   </form>
-                  <div className="container ">
-                    <button
-                      data-bs-toggle="modal"
-                      data-bs-target="#exampleModal"
-                      style={{
-                        backgroundColor: "#5D4DA1",
-                        width: "100%",
-                        padding: 20,
-                        borderRadius: 30,
-                        fontWeight: "bold",
-                        fontSize: 20,
-                      }}
-                      className="btn btn-primary"
-                    >
-                      Connect Wallete
-                    </button>
-                  </div>
                 </div>
               )}
+
+
+
+
+
             </div>
           </div>
         </div>
+        <Toaster position="bottom-right" toastOptions={{ duration: 2000 }} />
       </div>
     </>
   );
