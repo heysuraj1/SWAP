@@ -4,8 +4,8 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, Label } from "recharts";
 const LineChartComp = ({ chartData }) => {
 
 
-  var min = Math.min(...chartData.map(item => item.value));
-  var max = Math.max(...chartData.map(item => item.value));
+  var min = Math.min(...chartData.map(item => item.value))
+  var max = Math.max(...chartData.map(item => item.value))
 
 
   return (
@@ -15,14 +15,14 @@ const LineChartComp = ({ chartData }) => {
       data={chartData}
       // margin={{ top: 15, right: 30, left: 20, bottom: 5 }}
 
-      margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
+      margin={{ top: 15, right: 30, left: 35, bottom: 5  }}
     >
       <Line type="monotone" dataKey="value" stroke="#8884d8" width={2} dot={false} />
-      <XAxis dataKey="time" padding={{ left: 20 }} >
-        <Label value="Time" offset={10} position="insideBottom" style={{  textAnchor: 'middle', fontSize: '80%', fill: 'white' }} />
+      <XAxis dataKey="time" >
+        <Label value="Time" offset={-5} position="insideBottom" style={{  textAnchor: 'middle', fontSize: '80%', fill: 'white' }} />
       </XAxis>
       <YAxis domain={[min, max]}  >
-      <Label value="LYKA price in BUSD" angle={-90} offset={10} position="insideLeft" style={{  textAnchor: 'middle', fontSize: '80%', fill: 'white', top: 20 }} />
+      <Label value="LYKA price in BUSD" angle={-90} offset={-25} position="insideLeft" style={{  textAnchor: 'middle', fontSize: '80%', fill: 'white' }} />
 
         </YAxis>
 

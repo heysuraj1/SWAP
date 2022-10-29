@@ -119,7 +119,7 @@ const App = () => {
 
       let newDataList = sorted.map(d => ({
         time: d.time,
-        value: d.value
+        value: d.value.toFixed(6)
       }));
       setChartData(newDataList)
       setChartDataLoading(false)
