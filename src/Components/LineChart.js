@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { LineChart, Line, XAxis, YAxis } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, Label } from "recharts";
 
 const LineChartComp = ({ chartData }) => {
 
@@ -8,18 +8,27 @@ const LineChartComp = ({ chartData }) => {
   var max = Math.max(...chartData.map(item => item.value));
 
 
-
   return (
     <LineChart
       width={500}
       height={300}
       data={chartData}
+      // margin={{ top: 15, right: 30, left: 20, bottom: 5 }}
 
       margin={{ top: 5, right: 20, bottom: 5, left: 0 }}
     >
       <Line type="monotone" dataKey="value" stroke="#8884d8" width={2} dot={false} />
-      <XAxis dataKey="time" padding={{ left: 20 }} />
-      <YAxis domain={[min, max]} />
+      <XAxis dataKey="time" padding={{ left: 20 }} >
+        <Label value="Time" offset={10} position="insideBottom" style={{  textAnchor: 'middle', fontSize: '80%', fill: 'white' }} />
+      </XAxis>
+      <YAxis domain={[min, max]}  >
+      <Label value="LYKA price in BUSD" angle={-90} offset={10} position="insideLeft" style={{  textAnchor: 'middle', fontSize: '80%', fill: 'white', top: 20 }} />
+
+        </YAxis>
+
+
+
+      <Tooltip />
     </LineChart>
   )
 };

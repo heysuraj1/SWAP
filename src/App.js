@@ -12,7 +12,7 @@ import Settings from "./components/Settings";
 import axios from "axios";
 import { Toaster } from 'react-hot-toast'
 import useToast from "./useToast";
-import PulseLoader  from "react-spinners/PulseLoader"
+import PulseLoader from "react-spinners/PulseLoader"
 import LineChart from "./components/LineChart";
 
 
@@ -52,18 +52,18 @@ const App = () => {
       24: 3600,
       168: 86400,
       720: 86400,
-      8760: 86400 
+      8760: 86400
     }
-    for (let i = timeBoforeTime; i < currentTimeStamp; i+= inc[frame]) {
-      qstring += `t${i}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${i}, timestamp_lt: ${i+600} }) { number },`
+    for (let i = timeBoforeTime; i < currentTimeStamp; i += inc[frame]) {
+      qstring += `t${i}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${i}, timestamp_lt: ${i + 600} }) { number },`
     }
     const query = `
       query blocks {
         ${qstring}
       }
     `
-      const result = await axios.post(blockEndPoint, {query})
-      return result.data.data
+    const result = await axios.post(blockEndPoint, { query })
+    return result.data.data
   }
 
 
@@ -74,7 +74,7 @@ const App = () => {
     for (const k in blockData) {
       const key = k
       const value = blockData[k][0]['number']
-      
+
       qstring += `${key}:token(id:"${tokenAddress}", block: { number: ${value} }) { derivedUSD },`
     }
     const query = `
@@ -82,7 +82,8 @@ const App = () => {
         ${qstring}
       }
     `
-    const result = await axios.post(subgraphEndpoint, {query})
+
+    const result = await axios.post(subgraphEndpoint, { query })
     return result.data.data
 
   }
@@ -92,26 +93,35 @@ const App = () => {
     (async () => {
       setChartDataLoading(true)
       const laykaData = await getTokenPriceData(timeFrame, addresses.LAYKA.toLowerCase())
+
       const dataList = []
       for (const k in laykaData) {
         const key = parseInt(k.slice(1))
         const value = parseFloat(laykaData[k]['derivedUSD'])
-        if(timeFrame === 24) {
-          const newKey = new Date(key*1000).toTimeString()
-          dataList.push({time: newKey.slice(0,5), value: value})
-        } else if(timeFrame === 24*7) {
-          const newKey = new Date(key*1000).toLocaleDateString()
-          dataList.push({time: newKey.slice(0,5), value: value})
-        } else if(timeFrame === 24*30) {
-          const newKey = new Date(key*1000).toLocaleDateString()
-          dataList.push({time: newKey.slice(0,5), value: value})
+        if (timeFrame === 24) {
+          const newKey = new Date(key * 1000).toTimeString()
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
+        } else if (timeFrame === 24 * 7) {
+          const newKey = new Date(key * 1000).toLocaleDateString()
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
+        } else if (timeFrame === 24 * 30) {
+          const newKey = new Date(key * 1000).toLocaleDateString()
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
         } else {
-          const newKey = new Date(key*1000).toLocaleDateString()
-          dataList.push({time: newKey.slice(0,5), value: value})
+          const newKey = new Date(key * 1000).toLocaleDateString()
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
         }
         // dataList.push({time: key, value: value})
       }
-      setChartData(dataList)
+      const sorted = dataList.sort((a, b) => {
+        return a.tt - b.tt;
+      });
+
+      let newDataList = sorted.map(d => ({
+        time: d.time,
+        value: d.value
+      }));
+      setChartData(newDataList)
       setChartDataLoading(false)
     })()
   }, [timeFrame])
@@ -119,11 +129,11 @@ const App = () => {
 
   useEffect(() => {
     getLyakaPrice()
-    .then(resp => setLaykaPrice(resp))
+      .then(resp => setLaykaPrice(resp))
   }, [])
 
 
- 
+
 
   useEffect(() => {
     return () => {
@@ -156,7 +166,7 @@ const App = () => {
     return balance / decimal
   }
 
-  
+
 
   const handleSubmit = event => {
     event.preventDefault();
@@ -335,10 +345,10 @@ const App = () => {
                 </h1>
               </div>
 
-              <button onClick={() => {setTimeFrame(24); setF('D')}} disabled={timeFrame === 24}>24H</button>
-              <button onClick={() => {setTimeFrame(24*7); setF('W')}} disabled={timeFrame === 24*7}>1W</button>
-              <button onClick={() => {setTimeFrame(24*30); setF('M')}} disabled={timeFrame === 24*30}>1M</button>
-              <button onClick={() => {setTimeFrame(24*365); setF('Y')}} disabled={timeFrame === 24*365}>1Y</button>
+              <button onClick={() => { setTimeFrame(24); setF('D') }} disabled={timeFrame === 24}>24H</button>
+              <button onClick={() => { setTimeFrame(24 * 7); setF('W') }} disabled={timeFrame === 24 * 7}>1W</button>
+              <button onClick={() => { setTimeFrame(24 * 30); setF('M') }} disabled={timeFrame === 24 * 30}>1M</button>
+              <button onClick={() => { setTimeFrame(24 * 365); setF('Y') }} disabled={timeFrame === 24 * 365}>1Y</button>
 
 
               <div
