@@ -37,6 +37,7 @@ const App = () => {
   const [laykaPrice, setLaykaPrice] = useState(0)
   // const [chartData, setTempData] = useState([])
 
+  const DECIMALS = 10**18
 
   const laykaLogo = "https://lykacoin.net/pinksale.png"
   const busdLogo = "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
@@ -143,15 +144,21 @@ const App = () => {
   }, [])
 
 
+
   useEffect(() => {
-    (async () => {
-      if (active) {
-        const laykaBal = await fetchTokenBalance(addresses.LAYKA, abis.LAYKA, account)
-        const busdBal = await fetchTokenBalance(addresses.BUSD, abis.BUSD, account)
-        setLaykaBalance(laykaBal)
-        setBusdBalance(busdBal)
-      }
-    })()
+    if(active) {
+
+      const laykaContract = loadContract(library.provider, abis.LAYKA, addresses.LAYKA)
+      laykaContract.methods.balanceOf(account).
+      call()
+      .then(resp =>setLaykaBalance((resp / DECIMALS).toFixed(4)))
+
+      const busdContract = loadContract(library.provider, abis.BUSD, addresses.BUSD)
+      busdContract.methods.balanceOf(account).
+      call()
+      .then(resp =>setBusdBalance((resp / DECIMALS).toFixed(4)))
+      
+    }
   }, [active])
 
   const loadContract = (provider, abi, address) => {
@@ -159,12 +166,6 @@ const App = () => {
     return new web3.eth.Contract(abi, address)
   }
 
-  const fetchTokenBalance = async (tokenContract, tokenAbi, account) => {
-    const decimal = 18
-    const contract = loadContract(library.provider, tokenAbi, tokenContract)
-    const balance = await contract.methods.balanceOf(account).call()
-    return balance / decimal
-  }
 
 
 
@@ -184,7 +185,7 @@ const App = () => {
   }, [direction, laykaAmount, busdAmount])
 
   const getPrice = (value) => {
-    !direction ? setLaykaAmount(value) : setBusdAmount(value)
+    !direction ?  setLaykaAmount(value) : setBusdAmount(value)
     setShowGasPopup(true)
     if (!value.length) {
       direction ? setLaykaAmount('') : setBusdAmount('')
