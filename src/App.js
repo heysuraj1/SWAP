@@ -19,7 +19,7 @@ import LineChart from "./components/LineChart";
 
 const App = () => {
 
-  const { activate, active, account, library } = useWeb3React()
+  const { activate, active, account, library, deactivate } = useWeb3React()
   const [laykaAmount, setLaykaAmount] = useState('')
   const [busdAmount, setBusdAmount] = useState('')
   const [laykaBalance, setLaykaBalance] = useState(0)
@@ -37,7 +37,7 @@ const App = () => {
   const [laykaPrice, setLaykaPrice] = useState(0)
   // const [chartData, setTempData] = useState([])
 
-  const DECIMALS = 10**18
+  const DECIMALS = 10 ** 18
 
   const laykaLogo = "https://lykacoin.net/pinksale.png"
   const busdLogo = "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
@@ -146,18 +146,18 @@ const App = () => {
 
 
   useEffect(() => {
-    if(active) {
+    if (active) {
 
       const laykaContract = loadContract(library.provider, abis.LAYKA, addresses.LAYKA)
       laykaContract.methods.balanceOf(account).
-      call()
-      .then(resp =>setLaykaBalance((resp / DECIMALS).toFixed(4)))
+        call()
+        .then(resp => setLaykaBalance((resp / DECIMALS).toFixed(4)))
 
       const busdContract = loadContract(library.provider, abis.BUSD, addresses.BUSD)
       busdContract.methods.balanceOf(account).
-      call()
-      .then(resp =>setBusdBalance((resp / DECIMALS).toFixed(4)))
-      
+        call()
+        .then(resp => setBusdBalance((resp / DECIMALS).toFixed(4)))
+
     }
   }, [active])
 
@@ -185,7 +185,7 @@ const App = () => {
   }, [direction, laykaAmount, busdAmount])
 
   const getPrice = (value) => {
-    !direction ?  setLaykaAmount(value) : setBusdAmount(value)
+    !direction ? setLaykaAmount(value) : setBusdAmount(value)
     setShowGasPopup(true)
     if (!value.length) {
       direction ? setLaykaAmount('') : setBusdAmount('')
@@ -207,6 +207,8 @@ const App = () => {
       .then(resp => {
         setTx(resp)
         setLoadingTx(false)
+        setLaykaAmount('')
+        setBusdAmount('')
         setTimeout(() => {
           toggleTransactionModal()
         }, 200)
@@ -242,6 +244,10 @@ const App = () => {
         !active ? activate(injected) : toggleTransactionModal()
       }
     }
+  }
+
+  const shortenAddress = (address) => {
+    return `${address.substring(0, 6)}.........${address.substring(address.length - 4)}`
   }
 
 
@@ -320,6 +326,23 @@ const App = () => {
                 </li>
                 <li className="nav-item">
                   <a className="nav-link disabled">Disabled</a>
+                </li>
+                <li className="nav-item">
+                  <button
+                    type="submit"
+                    onClick={() => {!active ? activate(injected) : deactivate()}}
+                    style={{
+                      backgroundColor: "#5D4DA1",
+                      width: "100%",
+                      padding: 8,
+                      borderRadius: 30,
+                      fontWeight: "bold",
+                      fontSize: 20,
+                    }}
+                    className="btn btn-primary"
+                  >
+                    {!active ? 'Connect wallet' : shortenAddress(account)}
+                  </button>
                 </li>
               </ul>
             </div>

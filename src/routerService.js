@@ -78,7 +78,7 @@ export const swap = async (direction, amount, provider, account, slippage, te, t
       to,
       deadline
     ).send({ from: account })
-      ts('Success')
+      ts(`Your transaction is completed with transaction hash ${tx.transactionHash}`)
     return tx
 
   } catch (e) {
