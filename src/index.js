@@ -3,15 +3,36 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { Web3Provider } from '@ethersproject/providers';
+import { Web3ReactProvider } from '@web3-react/core';
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
+
+const client = new ApolloClient({
+  uri: 'https://graphql.bitquery.io',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-KEY': 'BQYc4emXFYipJGXiypNpejHOpIxzWCo5'
+  },
+  cache: new InMemoryCache()
+});
+
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+
+function getLibrary(provider) {
+  const library = new Web3Provider(provider);
+  return library;
+}
+
+
 root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+    <ApolloProvider client={client}>
+  <Web3ReactProvider getLibrary={getLibrary}>
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  </Web3ReactProvider>
+    </ApolloProvider>
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
 reportWebVitals();

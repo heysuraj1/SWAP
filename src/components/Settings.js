@@ -1,6 +1,7 @@
 import React from "react";
 
-const SettingsData = ({ setShowSettings }) => {
+const Settings = ({ setShowSettings, setSlippage, slippage }) => {
+
   return (
     <div>
       <div style={{ backgroundColor: "#120D20", padding: 30 }}>
@@ -22,12 +23,15 @@ const SettingsData = ({ setShowSettings }) => {
           </svg>
         </div>
         <h1 className="text-center text-white">Settings</h1>
+        <h6 className="text-white">Slippage tolerance</h6>
 
         <div className="row mt-4">
           <div className="col">
             <div style={{ textAlign: "center" }}>
               <input
                 placeholder="1%"
+                value={slippage}
+                onChange={e => setSlippage(e.target.value)}
                 style={{
                   backgroundColor: "#0A0112",
                   outline: "none",
@@ -37,7 +41,7 @@ const SettingsData = ({ setShowSettings }) => {
                   paddingLeft: 8,
                   borderColor: "#3C56B4",
                 }}
-                type="text"
+                type="number"
               />
             </div>
           </div>
@@ -162,4 +166,4 @@ const SettingsData = ({ setShowSettings }) => {
   );
 };
 
-export default SettingsData;
+export default Settings;
