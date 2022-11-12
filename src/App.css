@@ -131,3 +131,9 @@
   display: block;
   border-bottom: 1px solid #1bbc9b;
 }
+
+
+
+.table-responsive {
+  max-height:300px;
+}

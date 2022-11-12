@@ -11,8 +11,9 @@ const TableData = () => {
   }
 
   return (
-    <div className="container mt-5">
-      <table class="table text-white " style={{ backgroundColor: "#0A0112" }}>
+    <div className="container mt-5 ">
+      <div class="table-responsive">
+      <table  class="table text-white table-responsive" style={{ backgroundColor: "#0A0112",width:"100%" }}>
         <thead>
           <tr>
             <th scope="col">Date</th>
@@ -33,7 +34,7 @@ const TableData = () => {
                   <td style={{color:hit.buyCurrency.symbol == "WBNB" ? "green":"red",fontWeight:"bold"}}>{hit.buyCurrency.symbol == "WBNB" ? "Buy" : "Sell"}</td>
                   <td>
                     {hit.buyAmountInUsd / hit.sellAmount == 0
-                      ? hit.buyAmountInUsd / hit.buyAmount
+                      ? hit.sellAmountInUsd / hit.buyAmount
                       : hit.buyAmountInUsd / hit.sellAmount}
                   </td>
                   <td>{hit.quoteAmount}</td>
@@ -55,6 +56,7 @@ const TableData = () => {
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 };
