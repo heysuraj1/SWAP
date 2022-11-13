@@ -2,116 +2,123 @@ import { useWeb3React } from "@web3-react/core";
 import React, { useEffect, useMemo, useState } from "react";
 import { Chart } from "react-charts";
 import Web3 from "web3";
-import { ethers } from 'ethers'
+import { ethers } from "ethers";
 import { injected } from "./connector";
-import { addresses } from './contracts'
-import { abis } from './abis'
-import { getGasPrice, getLyakaPrice, getSwapPrice, swap } from "./routerService";
+import { addresses } from "./contracts";
+import { abis } from "./abis";
+import {
+  getGasPrice,
+  getLyakaPrice,
+  getSwapPrice,
+  swap,
+} from "./routerService";
 import ConfirmTransactionModal from "./components/ConfirmTransactionModal";
 import Settings from "./components/Settings";
 import axios from "axios";
-import { Toaster } from 'react-hot-toast'
+import { Toaster } from "react-hot-toast";
 import useToast from "./useToast";
-import PulseLoader from "react-spinners/PulseLoader"
+import PulseLoader from "react-spinners/PulseLoader";
 import LineChart from "./components/LineChart";
 import TableData from "./components/TableData/TableData";
 
-
-
 const App = () => {
-
-  const { activate, active, account, library } = useWeb3React()
-  const [laykaAmount, setLaykaAmount] = useState('')
-  const [busdAmount, setBusdAmount] = useState('')
-  const [laykaBalance, setLaykaBalance] = useState(0)
-  const [busdBalance, setBusdBalance] = useState(0)
-  const [showGasPopup, setShowGasPopup] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const [direction, setDirection] = useState(false)
-  const [slippage, setSlippage] = useState('1')
-  const [gasPrice, setGasPrice] = useState(undefined)
-  const [loadingTx, setLoadingTx] = useState(false)
-  const [timeFrame, setTimeFrame] = useState(24)
-  const [f, setF] = useState('D')
-  const [chartData, setChartData] = useState([])
-  const [chartDataLoading, setChartDataLoading] = useState(false)
-  const [laykaPrice, setLaykaPrice] = useState(0)
+  const { activate, active, account, library } = useWeb3React();
+  const [laykaAmount, setLaykaAmount] = useState("");
+  const [busdAmount, setBusdAmount] = useState("");
+  const [laykaBalance, setLaykaBalance] = useState(0);
+  const [busdBalance, setBusdBalance] = useState(0);
+  const [showGasPopup, setShowGasPopup] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [direction, setDirection] = useState(false);
+  const [slippage, setSlippage] = useState("1");
+  const [gasPrice, setGasPrice] = useState(undefined);
+  const [loadingTx, setLoadingTx] = useState(false);
+  const [timeFrame, setTimeFrame] = useState(24);
+  const [f, setF] = useState("D");
+  const [chartData, setChartData] = useState([]);
+  const [chartDataLoading, setChartDataLoading] = useState(false);
+  const [laykaPrice, setLaykaPrice] = useState(0);
   // const [chartData, setTempData] = useState([])
 
-  const DECIMALS = 10**18
+  const DECIMALS = 10 ** 18;
 
-  const laykaLogo = "https://lykacoin.net/pinksale.png"
-  const busdLogo = "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png"
+  const laykaLogo = "https://lykacoin.net/pinksale.png";
+  const busdLogo =
+    "https://upload.wikimedia.org/wikipedia/commons/f/fc/Binance-coin-bnb-logo.png";
 
-  const { toastError, toastSuccess } = useToast()
+  const { toastError, toastSuccess } = useToast();
 
   const getBlockData = async (frame) => {
-    const blockEndPoint = "https://api.thegraph.com/subgraphs/name/pancakeswap/blocks"
-    const currentTimeStamp = Math.round(new Date().getTime() / 1000)
-    const timeBoforeTime = currentTimeStamp - (frame * 3600)
-    let qstring = ''
+    const blockEndPoint =
+      "https://api.thegraph.com/subgraphs/name/pancakeswap/blocks";
+    const currentTimeStamp = Math.round(new Date().getTime() / 1000);
+    const timeBoforeTime = currentTimeStamp - frame * 3600;
+    let qstring = "";
     const inc = {
       24: 3600,
       168: 86400,
       720: 86400,
-      8760: 86400
-    }
+      8760: 86400,
+    };
     for (let i = timeBoforeTime; i < currentTimeStamp; i += inc[frame]) {
-      qstring += `t${i}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${i}, timestamp_lt: ${i + 600} }) { number },`
+      qstring += `t${i}:blocks(first: 1, orderBy: timestamp, orderDirection: desc, where: { timestamp_gt: ${i}, timestamp_lt: ${
+        i + 600
+      } }) { number },`;
     }
     const query = `
       query blocks {
         ${qstring}
       }
-    `
-    const result = await axios.post(blockEndPoint, { query })
-    return result.data.data
-  }
-
+    `;
+    const result = await axios.post(blockEndPoint, { query });
+    return result.data.data;
+  };
 
   const getTokenPriceData = async (frame, tokenAddress) => {
-    const subgraphEndpoint = 'https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2'
-    const blockData = await getBlockData(frame)
-    let qstring = ''
+    const subgraphEndpoint =
+      "https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2";
+    const blockData = await getBlockData(frame);
+    let qstring = "";
     for (const k in blockData) {
-      const key = k
-      const value = blockData[k][0]['number']
+      const key = k;
+      const value = blockData[k][0]["number"];
 
-      qstring += `${key}:token(id:"${tokenAddress}", block: { number: ${value} }) { derivedUSD },`
+      qstring += `${key}:token(id:"${tokenAddress}", block: { number: ${value} }) { derivedUSD },`;
     }
     const query = `
       query derivedTokenPriceData {
         ${qstring}
       }
-    `
+    `;
 
-    const result = await axios.post(subgraphEndpoint, { query })
-    return result.data.data
-
-  }
-
+    const result = await axios.post(subgraphEndpoint, { query });
+    return result.data.data;
+  };
 
   useEffect(() => {
     (async () => {
-      setChartDataLoading(true)
-      const laykaData = await getTokenPriceData(timeFrame, addresses.LAYKA.toLowerCase())
+      setChartDataLoading(true);
+      const laykaData = await getTokenPriceData(
+        timeFrame,
+        addresses.LAYKA.toLowerCase()
+      );
 
-      const dataList = []
+      const dataList = [];
       for (const k in laykaData) {
-        const key = parseInt(k.slice(1))
-        const value = parseFloat(laykaData[k]['derivedUSD'])
+        const key = parseInt(k.slice(1));
+        const value = parseFloat(laykaData[k]["derivedUSD"]);
         if (timeFrame === 24) {
-          const newKey = new Date(key * 1000).toTimeString()
-          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
+          const newKey = new Date(key * 1000).toTimeString();
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key });
         } else if (timeFrame === 24 * 7) {
-          const newKey = new Date(key * 1000).toLocaleDateString()
-          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
+          const newKey = new Date(key * 1000).toLocaleDateString();
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key });
         } else if (timeFrame === 24 * 30) {
-          const newKey = new Date(key * 1000).toLocaleDateString()
-          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
+          const newKey = new Date(key * 1000).toLocaleDateString();
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key });
         } else {
-          const newKey = new Date(key * 1000).toLocaleDateString()
-          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key })
+          const newKey = new Date(key * 1000).toLocaleDateString();
+          dataList.push({ time: newKey.slice(0, 5), value: value, tt: key });
         }
         // dataList.push({time: key, value: value})
       }
@@ -119,133 +126,133 @@ const App = () => {
         return a.tt - b.tt;
       });
 
-      let newDataList = sorted.map(d => ({
+      let newDataList = sorted.map((d) => ({
         time: d.time,
-        value: d.value.toFixed(6)
+        value: d.value.toFixed(6),
       }));
-      setChartData(newDataList)
-      setChartDataLoading(false)
-    })()
-  }, [timeFrame])
-
+      setChartData(newDataList);
+      setChartDataLoading(false);
+    })();
+  }, [timeFrame]);
 
   useEffect(() => {
-    getLyakaPrice()
-      .then(resp => setLaykaPrice(resp))
-  }, [])
-
-
-
+    getLyakaPrice().then((resp) => setLaykaPrice(resp));
+  }, []);
 
   useEffect(() => {
     return () => {
-      setLaykaAmount('')
-      setBusdAmount('')
-    }
-  }, [])
-
-
+      setLaykaAmount("");
+      setBusdAmount("");
+    };
+  }, []);
 
   useEffect(() => {
-    if(active) {
+    if (active) {
+      const laykaContract = loadContract(
+        library.provider,
+        abis.LAYKA,
+        addresses.LAYKA
+      );
+      laykaContract.methods
+        .balanceOf(account)
+        .call()
+        .then((resp) => setLaykaBalance((resp / DECIMALS).toFixed(4)));
 
-      const laykaContract = loadContract(library.provider, abis.LAYKA, addresses.LAYKA)
-      laykaContract.methods.balanceOf(account).
-      call()
-      .then(resp =>setLaykaBalance((resp / DECIMALS).toFixed(4)))
-
-      const busdContract = loadContract(library.provider, abis.BUSD, addresses.BUSD)
-      busdContract.methods.balanceOf(account).
-      call()
-      .then(resp =>setBusdBalance((resp / DECIMALS).toFixed(4)))
-      
+      const busdContract = loadContract(
+        library.provider,
+        abis.BUSD,
+        addresses.BUSD
+      );
+      busdContract.methods
+        .balanceOf(account)
+        .call()
+        .then((resp) => setBusdBalance((resp / DECIMALS).toFixed(4)));
     }
-  }, [active])
+  }, [active]);
 
   const loadContract = (provider, abi, address) => {
-    const web3 = new Web3(provider)
-    return new web3.eth.Contract(abi, address)
-  }
+    const web3 = new Web3(provider);
+    return new web3.eth.Contract(abi, address);
+  };
 
-
-
-
-  const handleSubmit = event => {
+  const handleSubmit = (event) => {
     event.preventDefault();
-  }
+  };
 
-  const [loading, setLoading] = useState(false)
-  const [tx, setTx] = useState(undefined)
+  const [loading, setLoading] = useState(false);
+  const [tx, setTx] = useState(undefined);
 
   useEffect(() => {
     if (!direction && !laykaAmount.length) {
-      setBusdAmount('')
+      setBusdAmount("");
     } else if (direction && !busdAmount.length) {
-      setLaykaAmount('')
+      setLaykaAmount("");
     }
-  }, [direction, laykaAmount, busdAmount])
+  }, [direction, laykaAmount, busdAmount]);
 
   const getPrice = (value) => {
-    !direction ?  setLaykaAmount(value) : setBusdAmount(value)
-    setShowGasPopup(true)
+    !direction ? setLaykaAmount(value) : setBusdAmount(value);
+    setShowGasPopup(true);
     if (!value.length) {
-      direction ? setLaykaAmount('') : setBusdAmount('')
-      setShowGasPopup(false)
+      direction ? setLaykaAmount("") : setBusdAmount("");
+      setShowGasPopup(false);
     } else {
-      setLoading(true)
-      getSwapPrice(direction, value, slippage)
-        .then(resp => {
-          direction ? setLaykaAmount(resp) : setBusdAmount(resp)
-          setLoading(false)
-        })
+      setLoading(true);
+      getSwapPrice(direction, value, slippage).then((resp) => {
+        direction ? setLaykaAmount(resp) : setBusdAmount(resp);
+        setLoading(false);
+      });
     }
-  }
+  };
 
   const swapToken = async () => {
-    setLoadingTx(true)
-    const value = !direction ? laykaAmount : busdAmount
-    swap(direction, value, library.provider, account, slippage, toastError, toastSuccess)
-      .then(resp => {
-        setTx(resp)
-        setLoadingTx(false)
+    setLoadingTx(true);
+    const value = !direction ? laykaAmount : busdAmount;
+    swap(
+      direction,
+      value,
+      library.provider,
+      account,
+      slippage,
+      toastError,
+      toastSuccess
+    )
+      .then((resp) => {
+        setTx(resp);
+        setLoadingTx(false);
         setTimeout(() => {
-          toggleTransactionModal()
-        }, 200)
+          toggleTransactionModal();
+        }, 200);
       })
-      .catch(e => {
-        setLoadingTx(false)
-      })
-
-  }
-
-
+      .catch((e) => {
+        setLoadingTx(false);
+      });
+  };
 
   const toggleTransactionModal = () => {
-    let attr = document.createElement('button')
-    attr.setAttribute('data-bs-toggle', 'modal')
-    attr.setAttribute('data-bs-target', '#exampleModal')
-    document.body.appendChild(attr)
-    attr.click()
-    attr.remove()
-  }
+    let attr = document.createElement("button");
+    attr.setAttribute("data-bs-toggle", "modal");
+    attr.setAttribute("data-bs-target", "#exampleModal");
+    document.body.appendChild(attr);
+    attr.click();
+    attr.remove();
+  };
 
   const handleOnclick = () => {
     if (!direction) {
       if (laykaBalance < laykaAmount && active) {
-        toastError('Insufficient funds')
+        toastError("Insufficient funds");
       } else {
-        !active ? activate(injected) : toggleTransactionModal()
+        !active ? activate(injected) : toggleTransactionModal();
       }
     } else {
       if (busdBalance < busdAmount && active) {
-        toastError('Insufficient funds')
+        toastError("Insufficient funds");
       } else {
-        !active ? activate(injected) : toggleTransactionModal()
+        !active ? activate(injected) : toggleTransactionModal();
       }
     }
-  }
-
-
+  };
 
   return (
     <>
@@ -327,46 +334,65 @@ const App = () => {
           </div>
         </nav> */}
 
-     <nav className="navbar navbar-expand-lg navbar-dark  px-0 py-3">
-  <div className="container-xl">
-    {/* Logo */}
-    <a className="navbar-brand" href="#">
-      <img src="https://www.lykayield.com/images2/logo/logo.png" className="h-8" alt="..." />
-    </a>
-    {/* Navbar toggle */}
-    <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-      <span className="navbar-toggler-icon" />
-    </button>
-    {/* Collapse */}
-    <div className="collapse navbar-collapse" id="navbarCollapse">
-      {/* Nav */}
-      <div className="navbar-nav mx-lg-auto">
-       
-      </div>
-      {/* Right navigation */}
-      <div className="navbar-nav ms-lg-4">
-        <a className="nav-item nav-link active" aria-current="page">Home</a>
-        <a className="nav-item nav-link" href="https://lykacoin.net">About Us</a>
-        <a className="nav-item nav-link" href="https://lykacoin.net/whitepaper.pdf">WhitePaper</a>
-        <a className="nav-item nav-link" href="https://bscscan.com/token/0x26844ffd91648e8274598e6e18921a3e5dc14ade">Contract</a>
-      </div>
-    
-    </div>
-  </div>
-</nav>
-
-
-
+        <nav className="navbar navbar-expand-lg navbar-dark  px-0 py-3">
+          <div className="container-xl">
+            {/* Logo */}
+            <a className="navbar-brand" href="#">
+              <img
+                src="https://www.lykayield.com/images2/logo/logo.png"
+                className="h-8"
+                alt="..."
+              />
+            </a>
+            {/* Navbar toggle */}
+            <button
+              className="navbar-toggler"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#navbarCollapse"
+              aria-controls="navbarCollapse"
+              aria-expanded="false"
+              aria-label="Toggle navigation"
+            >
+              <span className="navbar-toggler-icon" />
+            </button>
+            {/* Collapse */}
+            <div className="collapse navbar-collapse" id="navbarCollapse">
+              {/* Nav */}
+              <div className="navbar-nav mx-lg-auto"></div>
+              {/* Right navigation */}
+              <div className="navbar-nav ms-lg-4">
+                <a className="nav-item nav-link active" aria-current="page">
+                  Home
+                </a>
+                <a className="nav-item nav-link" href="https://lykacoin.net">
+                  About Us
+                </a>
+                <a
+                  className="nav-item nav-link"
+                  href="https://lykacoin.net/whitepaper.pdf"
+                >
+                  WhitePaper
+                </a>
+                <a
+                  className="nav-item nav-link"
+                  href="https://bscscan.com/token/0x26844ffd91648e8274598e6e18921a3e5dc14ade"
+                >
+                  Contract
+                </a>
+              </div>
+            </div>
+          </div>
+        </nav>
 
         <ConfirmTransactionModal
-          fromToken={!direction ? 'LYKA' : 'BUSD'}
-          toToken={direction ? 'LYKA' : 'BUSD'}
+          fromToken={!direction ? "LYKA" : "BUSD"}
+          toToken={direction ? "LYKA" : "BUSD"}
           fromValue={!direction ? laykaAmount : busdAmount}
           toValue={direction ? laykaAmount : busdAmount}
           swapToken={swapToken}
           loadingTx={loadingTx}
         />
-
 
         <div className="container">
           <div className="row">
@@ -378,11 +404,42 @@ const App = () => {
                 </h1>
               </div>
 
-              <button onClick={() => { setTimeFrame(24); setF('D') }} disabled={timeFrame === 24}>24H</button>
-              <button onClick={() => { setTimeFrame(24 * 7); setF('W') }} disabled={timeFrame === 24 * 7}>1W</button>
-              <button onClick={() => { setTimeFrame(24 * 30); setF('M') }} disabled={timeFrame === 24 * 30}>1M</button>
-              <button onClick={() => { setTimeFrame(24 * 365); setF('Y') }} disabled={timeFrame === 24 * 365}>1Y</button>
-
+              <button
+                onClick={() => {
+                  setTimeFrame(24);
+                  setF("D");
+                }}
+                disabled={timeFrame === 24}
+              >
+                24H
+              </button>
+              <button
+                onClick={() => {
+                  setTimeFrame(24 * 7);
+                  setF("W");
+                }}
+                disabled={timeFrame === 24 * 7}
+              >
+                1W
+              </button>
+              <button
+                onClick={() => {
+                  setTimeFrame(24 * 30);
+                  setF("M");
+                }}
+                disabled={timeFrame === 24 * 30}
+              >
+                1M
+              </button>
+              <button
+                onClick={() => {
+                  setTimeFrame(24 * 365);
+                  setF("Y");
+                }}
+                disabled={timeFrame === 24 * 365}
+              >
+                1Y
+              </button>
 
               <div
                 style={{
@@ -391,16 +448,19 @@ const App = () => {
                 }}
               >
                 {chartDataLoading ? (
-                  <PulseLoader size={30} color={'#ffffff'} />
+                  <PulseLoader size={30} color={"#ffffff"} />
                 ) : (
                   <LineChart chartData={chartData} f={f} />
                 )}
               </div>
             </div>
             <div className="col-sm-6 mt-5">
-
               {showSettings ? (
-                <Settings setShowSettings={setShowSettings} setSlippage={setSlippage} slippage={slippage} />
+                <Settings
+                  setShowSettings={setShowSettings}
+                  setSlippage={setSlippage}
+                  slippage={slippage}
+                />
               ) : (
                 <div
                   className="container p-5"
@@ -439,17 +499,21 @@ const App = () => {
                               alt=""
                             />
 
-                            <h6 className="text-white">{!direction ? 'LYKA' : 'BUSD'}</h6>
+                            <h6 className="text-white">
+                              {!direction ? "LYKA" : "BUSD"}
+                            </h6>
                           </div>
                           <h6 style={{ color: "#7F818A" }} className="mt-3">
                             You Pay
                           </h6>
                         </div>
 
-                        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                        <div
+                          style={{ display: "flex", gap: 10, marginTop: 12 }}
+                        >
                           <input
                             onChange={(e) => {
-                              getPrice(e.target.value)
+                              getPrice(e.target.value);
                             }}
                             value={!direction ? laykaAmount : busdAmount}
                             style={{
@@ -472,7 +536,10 @@ const App = () => {
                       </div>
                     </div>
 
-                    <div style={{ marginLeft: 40, cursor: 'pointer' }} onClick={() => setDirection(!direction)}>
+                    <div
+                      style={{ marginLeft: 40, cursor: "pointer" }}
+                      onClick={() => setDirection(!direction)}
+                    >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width={35}
@@ -520,15 +587,21 @@ const App = () => {
                               alt=""
                             />
 
-                            <h6 className="text-white">{direction ? 'LAYKA' : 'BUSD'}</h6>
+                            <h6 className="text-white">
+                              {direction ? "LAYKA" : "BUSD"}
+                            </h6>
                           </div>
                           <h6 style={{ color: "#7F818A" }} className="mt-3">
                             You Receive
                           </h6>
                         </div>
 
-                        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                          {loading ? 'loading' : (
+                        <div
+                          style={{ display: "flex", gap: 10, marginTop: 12 }}
+                        >
+                          {loading ? (
+                            "loading"
+                          ) : (
                             <input
                               style={{
                                 padding: 10,
@@ -567,9 +640,12 @@ const App = () => {
                                 {gasPrice}
                                 High (204.45 - 273.92 Gwei)
                               </h5>
-                              <h6 style={{ color: "#B9B8B8" }}>Slippage Tolerance</h6>
-                              <h6 style={{ color: "#B9B8B8" }}>{`${slippage} %`}</h6>
-
+                              <h6 style={{ color: "#B9B8B8" }}>
+                                Slippage Tolerance
+                              </h6>
+                              <h6
+                                style={{ color: "#B9B8B8" }}
+                              >{`${slippage} %`}</h6>
                             </div>
                             <div className="col">
                               <div style={{ textAlign: "right" }}>
@@ -599,8 +675,16 @@ const App = () => {
                     <div className="container ">
                       <button
                         type="submit"
-                        disabled={active ? !direction ? !laykaAmount.length || loading : !busdAmount.length || loading : false}
-                        onClick={() => { handleOnclick() }}
+                        disabled={
+                          active
+                            ? !direction
+                              ? !laykaAmount.length || loading
+                              : !busdAmount.length || loading
+                            : false
+                        }
+                        onClick={() => {
+                          handleOnclick();
+                        }}
                         style={{
                           backgroundColor: "#5D4DA1",
                           width: "100%",
@@ -611,62 +695,47 @@ const App = () => {
                         }}
                         className="btn btn-primary"
                       >
-                        {!active ? 'Connet Wallet' : !direction ? !laykaAmount.length ? 'Enter Amount' : 'Swap' : !busdAmount.length ? 'Enter Amount' : 'Swap'}
+                        {!active
+                          ? "Connect Wallet"
+                          : !direction
+                          ? !laykaAmount.length
+                            ? "Enter Amount"
+                            : "Swap"
+                          : !busdAmount.length
+                          ? "Enter Amount"
+                          : "Swap"}
                       </button>
                     </div>
                   </form>
                 </div>
               )}
-
-
-
-
-
             </div>
           </div>
         </div>
 
-
-
-        <TableData/>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        <TableData />
 
         <Toaster position="bottom-right" toastOptions={{ duration: 2000 }} />
 
-
-
-
-
-
-
-
-      <footer className="section bg-footer mt-5">
-  <div className="container">
-    <div className="row">
-      <div className="col-lg-3">
-        <div className>
-         <img className="img-fluid"   src="https://www.lykayield.com/images2/logo/logo.png" alt="" />
-         <p className="text-white">Trade anything. No registration, no hassle. Trade LykaToken on BNB Smart Chain in second, just by connecting your wallet.</p>
-        </div>
-      </div>
-      <div className="col-lg-3">
-        {/* <div className>
+        <footer className="section bg-footer mt-5">
+          <div className="container">
+            <div className="row">
+              <div className="col-lg-3">
+                <div className>
+                  <img
+                    className="img-fluid"
+                    src="https://www.lykayield.com/images2/logo/logo.png"
+                    alt=""
+                  />
+                  <p className="text-white">
+                    Trade anything. No registration, no hassle. Trade LykaToken
+                    on BNB Smart Chain in second, just by connecting your
+                    wallet.
+                  </p>
+                </div>
+              </div>
+              <div className="col-lg-3">
+                {/* <div className>
           <h6 className="footer-heading text-uppercase text-white">Quick Link</h6>
           <ul className="list-unstyled footer-link mt-4">
             <li><a className="text-white" style={{textDecoration:"none"}} href>Monitoring Grader </a></li>
@@ -675,40 +744,123 @@ const App = () => {
             <li><a className="text-white" style={{textDecoration:"none"}} href>Zeeko API</a></li>
           </ul>
         </div> */}
-      </div>
-      <div className="col-lg-2">
-        <div className>
-          <h6 className="footer-heading text-uppercase text-white">Quick Link</h6>
-          <ul className="list-unstyled footer-link mt-4">
-            <li><a  className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-staking">Lyka Staking</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-yeild">Lyka Yield</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-swap">Lyka Swap</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-move">Lyka Move</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-play">Lyka Play</a></li>
-          </ul>
-        </div>
-      </div>
-      <div className="col-lg-4">
-      <div className>
-          <h6 className="footer-heading text-uppercase text-white">Quick Link</h6>
-          <ul className="list-unstyled footer-link mt-4">
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-launchpad">Lyka Launchpad</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-nft">Lyka NFT</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-exchange">Lyka Exchange</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-verse">Lyka Verse</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href="https://lykacoin.net/lyka-blockchain">Lyka Blockchain</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div className="text-center mt-5">
-    <p className="footer-alt mb-0 f-14 text-white">2022 © Lyka Swap, All Rights Reserved</p>
-  </div>
-</footer>
-
-
-
+              </div>
+              <div className="col-lg-2">
+                <div className>
+                  <h6 className="footer-heading text-uppercase text-white">
+                    Quick Link
+                  </h6>
+                  <ul className="list-unstyled footer-link mt-4">
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-staking"
+                      >
+                        Lyka Staking
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-yeild"
+                      >
+                        Lyka Yield
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-swap"
+                      >
+                        Lyka Swap
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-move"
+                      >
+                        Lyka Move
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-play"
+                      >
+                        Lyka Play
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <div className="col-lg-4">
+                <div className>
+                  <h6 className="footer-heading text-uppercase text-white">
+                    Quick Link
+                  </h6>
+                  <ul className="list-unstyled footer-link mt-4">
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-launchpad"
+                      >
+                        Lyka Launchpad
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-nft"
+                      >
+                        Lyka NFT
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-exchange"
+                      >
+                        Lyka Exchange
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-verse"
+                      >
+                        Lyka Verse
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://lykacoin.net/lyka-blockchain"
+                      >
+                        Lyka Blockchain
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="text-center mt-5">
+            <p className="footer-alt mb-0 f-14 text-white">
+              2022 © Lyka Swap, All Rights Reserved
+            </p>
+          </div>
+        </footer>
       </div>
     </>
   );
