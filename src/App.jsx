@@ -39,6 +39,12 @@ const App = () => {
   const [chartDataLoading, setChartDataLoading] = useState(false);
   const [laykaPrice, setLaykaPrice] = useState(0);
   const [address, setAddress] = useState("")
+
+
+  const [button1, setButton1] = useState(false)
+  const [button2, setButton2] = useState(false)
+  const [button3, setButton3] = useState(false)
+  const [button4, setButton4] = useState(false)
   // const [chartData, setTempData] = useState([])
 
   const DECIMALS = 10 ** 18;
@@ -329,8 +335,8 @@ const App = () => {
                 >
                <div style={{display:"flex",gap:3}}>
                 
-                  <img style={{width:30,borderRadius:100,height:30,marginTop:-2}} className="img-fluid" src="https://lykacoin.net/pinksale.png" alt="" />
-                  <p style={{color:"#280D81",fontWeight:"bold",backgroundColor:"#EFF4F5",borderRadius:20,paddingLeft:5,paddingRight:5}}>LYKA SMART CHAIN</p>
+                  <img style={{width:30,borderRadius:100,height:30,marginTop:-2,position:"absolute",marginRight:8}} className="img-fluid" src="https://lykacoin.net/pinksale.png" alt="" />
+                  <p style={{color:"#280D81",fontWeight:"bold",backgroundColor:"#EFF4F5",borderRadius:20,paddingLeft:30,paddingRight:5,}}>BNB SMART CHAIN</p>
                </div>
                 </a>
                 <a
@@ -373,42 +379,58 @@ const App = () => {
 
               <div style={{backgroundColor:"#EFF4F5",width:"auto",borderRadius:50,width:300,marginBottom:20}}>
                 <div style={{textAlign:"center"}}>
-
+                
               <button
-              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
+              style={{margin:5,backgroundColor:button1 ? "#034eab" :"#212529",borderRadius:50,width:50,color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24);
                   setF("D");
+                  setButton1(true)
+                  setButton2(false)
+                  setButton3(false)
+                  setButton4(false)
                 }}
                 disabled={timeFrame === 24}
               >
                 24H
               </button>
               <button
-              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
+              style={{margin:5,borderRadius:50,width:50,backgroundColor:button2 ? "#034eab" :"#212529",color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24 * 7);
                   setF("W");
+                  setButton1(false)
+                  setButton2(true)
+                  setButton3(false)
+                  setButton4(false)
                 }}
                 disabled={timeFrame === 24 * 7}
               >
                 1W
               </button>
               <button
-              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
+              style={{margin:5,borderRadius:50,width:50,backgroundColor:button3 ? "#034eab" :"#212529",color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24 * 30);
                   setF("M");
+                  setButton1(false)
+                  setButton2(false)
+                  setButton3(true)
+                  setButton4(false)
                 }}
                 disabled={timeFrame === 24 * 30}
               >
                 1M
               </button>
               <button
-              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
+              style={{margin:5,borderRadius:50,width:50,backgroundColor:button4 ? "#034eab" :"#212529",color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24 * 365);
                   setF("Y");
+                  setButton1(false)
+                  setButton2(false)
+                  setButton3(false)
+                  setButton4(true)
                 }}
                 disabled={timeFrame === 24 * 365}
               >
@@ -429,7 +451,7 @@ const App = () => {
                 }}
               >
                 {chartDataLoading ? (
-                  <PulseLoader  style={{color:"white"}} size={40} color={"#ffffff"} />
+                  <PulseLoader  style={{color:"white"}} size={10} color={"#ffffff"} />
                 ) : ( 
                   <LineChart  chartData={chartData} f={f} />
                 )}
@@ -438,7 +460,7 @@ const App = () => {
 
 
 
-              <img className="img-fluid mt-2" style={{height:130,width:"100%",marginTop:10}} src="https://www.elocation.in/demo2/wp-content/uploads/2018/11/recharge-banner-1.jpg" alt="" />
+              <img className="img-fluid mt-2" style={{height:130,width:"100%",marginTop:20}} src="/recharge-banner-1.jpg" alt="" />
 
 
 
