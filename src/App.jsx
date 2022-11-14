@@ -38,6 +38,7 @@ const App = () => {
   const [chartData, setChartData] = useState([]);
   const [chartDataLoading, setChartDataLoading] = useState(false);
   const [laykaPrice, setLaykaPrice] = useState(0);
+  const [address, setAddress] = useState("")
   // const [chartData, setTempData] = useState([])
 
   const DECIMALS = 10 ** 18;
@@ -254,87 +255,30 @@ const App = () => {
     }
   };
 
+  const handleOpenIt = () =>{
+
+    if(window.ethereum){
+
+      window.ethereum.request({method:'eth_requestAccounts'})
+      .then(res=>{
+              // Return the address of the wallet
+              console.log(res) 
+              setAddress(res) 
+      })
+    }else{
+      alert("install metamask extension!!")
+    }
+
+
+
+  }
+
   return (
     <>
-      <div>
-        {/* <nav
-          className="navbar navbar-expand-lg navbar-dark"
-          style={{ backgroundColor: "#120D20" }}
-        >
-          <div className="container-fluid">
-            <a className="navbar-brand" href="#">
-              PunkPanda
-            </a>
-            <button
-              className="navbar-toggler"
-              type="button"
-              data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent"
-              aria-expanded="false"
-              aria-label="Toggle navigation"
-            >
-              <span className="navbar-toggler-icon" />
-            </button>
-            <div
-              className="collapse navbar-collapse"
-              id="navbarSupportedContent"
-            >
-              <ul className="navbar-nav me-auto mb-2 mb-lg-0">
-                <li className="nav-item">
-                  <a className="nav-link active" aria-current="page" href="#">
-                    Home
-                  </a>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link" href="#">
-                    Link
-                  </a>
-                </li>
-                <li className="nav-item dropdown">
-                  <a
-                    className="nav-link dropdown-toggle"
-                    href="#"
-                    id="navbarDropdown"
-                    role="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
-                    Dropdown
-                  </a>
-                  <ul
-                    className="dropdown-menu"
-                    aria-labelledby="navbarDropdown"
-                  >
-                    <li>
-                      <a className="dropdown-item" href="#">
-                        Action
-                      </a>
-                    </li>
-                    <li>
-                      <a className="dropdown-item" href="#">
-                        Another action
-                      </a>
-                    </li>
-                    <li>
-                      <hr className="dropdown-divider" />
-                    </li>
-                    <li>
-                      <a className="dropdown-item" href="#">
-                        Something else here
-                      </a>
-                    </li>
-                  </ul>
-                </li>
-                <li className="nav-item">
-                  <a className="nav-link disabled">Disabled</a>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </nav> */}
+      <div style={{backgroundColor:"#002758"}}>
 
-        <nav className="navbar navbar-expand-lg navbar-dark  px-0 py-3">
+
+        <nav style={{ backgroundColor:"#325A86",backdropFilter:8}} className="navbar navbar-expand-lg navbar-dark   px-0 py-3">
           <div className="container-xl">
             {/* Logo */}
             <a className="navbar-brand" href="#">
@@ -380,6 +324,29 @@ const App = () => {
                 >
                   Contract
                 </a>
+                <a
+                  className="nav-item nav-link"
+                >
+               <div style={{display:"flex",gap:3}}>
+                
+                  <img style={{width:30,borderRadius:100,height:30,marginTop:-2}} className="img-fluid" src="https://lykacoin.net/pinksale.png" alt="" />
+                  <p style={{color:"#280D81",fontWeight:"bold",backgroundColor:"#EFF4F5",borderRadius:20,paddingLeft:5,paddingRight:5}}>LYKA SMART CHAIN</p>
+               </div>
+                </a>
+                <a
+                  className="nav-item nav-link"
+                >
+                  {
+                    address ? 
+
+                    <button onClick={handleOpenIt} style={{backgroundColor:"#1FC7D4",color:"white",fontWeight:'bolder',borderRadius:10,marginTop:-5}} className="btn">{String(address).slice(0,5)}...{String(address).slice(-3)}</button>
+
+                    :
+
+                    <button onClick={handleOpenIt} style={{backgroundColor:"#1FC7D4",color:"white",fontWeight:'bolder',borderRadius:10,marginTop:-5}} className="btn">Connect Wallet</button>
+
+                  }
+                </a>
               </div>
             </div>
           </div>
@@ -404,7 +371,11 @@ const App = () => {
                 </h1>
               </div>
 
+              <div style={{backgroundColor:"#EFF4F5",width:"auto",borderRadius:50,width:300,marginBottom:20}}>
+                <div style={{textAlign:"center"}}>
+
               <button
+              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24);
                   setF("D");
@@ -414,6 +385,7 @@ const App = () => {
                 24H
               </button>
               <button
+              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24 * 7);
                   setF("W");
@@ -423,6 +395,7 @@ const App = () => {
                 1W
               </button>
               <button
+              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24 * 30);
                   setF("M");
@@ -432,6 +405,7 @@ const App = () => {
                 1M
               </button>
               <button
+              style={{margin:5,borderColor:"#002758",borderRadius:50,width:50,backgroundColor:"#002758",color:"white",fontWeight:"bolder"}}
                 onClick={() => {
                   setTimeFrame(24 * 365);
                   setF("Y");
@@ -440,19 +414,43 @@ const App = () => {
               >
                 1Y
               </button>
+                </div>
+
+
+              </div>
+
 
               <div
                 style={{
                   width: "100%",
-                  height: "400px",
+                  height: "300px",
+                  // backgroundColor:"#345072",
+                  color:"white"
                 }}
               >
                 {chartDataLoading ? (
-                  <PulseLoader size={30} color={"#ffffff"} />
-                ) : (
-                  <LineChart chartData={chartData} f={f} />
+                  <PulseLoader  style={{color:"white"}} size={40} color={"#ffffff"} />
+                ) : ( 
+                  <LineChart  chartData={chartData} f={f} />
                 )}
               </div>
+
+
+
+
+              <img className="img-fluid mt-2" style={{height:130,width:"100%",marginTop:10}} src="https://www.elocation.in/demo2/wp-content/uploads/2018/11/recharge-banner-1.jpg" alt="" />
+
+
+
+
+
+
+
+
+
+
+
+
             </div>
             <div className="col-sm-6 mt-5">
               {showSettings ? (
@@ -463,8 +461,8 @@ const App = () => {
                 />
               ) : (
                 <div
-                  className="container p-5"
-                  style={{ backgroundColor: "#120D20" }}
+                  className="container p-1"
+                  style={{ backgroundColor: "#345072" ,borderRadius:20}}
                 >
                   <form onSubmit={handleSubmit}>
                     <h4
@@ -477,7 +475,7 @@ const App = () => {
                       <div
                         style={{
                           padding: 20,
-                          backgroundColor: "#0A0112",
+                          backgroundColor: "#212529",
                           borderRadius: 40,
                         }}
                       >
@@ -485,7 +483,7 @@ const App = () => {
                           <div
                             style={{
                               padding: 10,
-                              backgroundColor: "#1A132F",
+                              backgroundColor: "#495066",
                               borderRadius: 20,
                               display: "flex",
                               gap: 10,
@@ -518,7 +516,7 @@ const App = () => {
                             value={!direction ? laykaAmount : busdAmount}
                             style={{
                               padding: 10,
-                              backgroundColor: "#0A0112",
+                              backgroundColor: "#212529",
                               border: "none",
                               color: "white",
                               outline: "none",
@@ -537,7 +535,7 @@ const App = () => {
                     </div>
 
                     <div
-                      style={{ marginLeft: 40, cursor: "pointer" }}
+                      style={{ marginLeft: 40, cursor: "pointer",marginTop:-18,marginBottom:-18}}
                       onClick={() => setDirection(!direction)}
                     >
                       <svg
@@ -565,7 +563,7 @@ const App = () => {
                       <div
                         style={{
                           padding: 20,
-                          backgroundColor: "#0A0112",
+                          backgroundColor: "#212529",
                           borderRadius: 40,
                         }}
                       >
@@ -573,7 +571,7 @@ const App = () => {
                           <div
                             style={{
                               padding: 10,
-                              backgroundColor: "#1A132F",
+                              backgroundColor: "#495066",
                               borderRadius: 20,
                               display: "flex",
                               gap: 10,
@@ -588,7 +586,7 @@ const App = () => {
                             />
 
                             <h6 className="text-white">
-                              {direction ? "LAYKA" : "BUSD"}
+                              {direction ? "LYKA" : "BUSD"}
                             </h6>
                           </div>
                           <h6 style={{ color: "#7F818A" }} className="mt-3">
@@ -605,7 +603,7 @@ const App = () => {
                             <input
                               style={{
                                 padding: 10,
-                                backgroundColor: "#0A0112",
+                                backgroundColor: "#212529",
                                 border: "none",
                                 color: "white",
                                 outline: "none",
@@ -627,7 +625,7 @@ const App = () => {
                       {showGasPopup ? (
                         <div
                           style={{
-                            backgroundColor: "#1A132F",
+                            backgroundColor: "#212529",
                             padding: 20,
                             marginTop: 30,
                             borderRadius: 30,
@@ -672,7 +670,7 @@ const App = () => {
                         <></>
                       )}
                     </div>
-                    <div className="container ">
+                    <div className="container pb-3">
                       <button
                         type="submit"
                         disabled={
@@ -686,7 +684,7 @@ const App = () => {
                           handleOnclick();
                         }}
                         style={{
-                          backgroundColor: "#5D4DA1",
+                          backgroundColor: "#28456C",
                           width: "100%",
                           padding: 20,
                           borderRadius: 30,
@@ -728,9 +726,9 @@ const App = () => {
                     alt=""
                   />
                   <p className="text-white">
-                    Trade anything. No registration, no hassle. Trade LykaToken
-                    on BNB Smart Chain in second, just by connecting your
-                    wallet.
+                  No registration, No hassle. Trade LykaToken on BNB Smart Chain in second, just by connecting your wallet.
+
+
                   </p>
                 </div>
               </div>

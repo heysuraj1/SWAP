@@ -67,7 +67,7 @@ const TableData = () => {
   return (
     <div className="container mt-5 ">
       <div class="table-responsive">
-      <table  class="table text-white table-responsive" style={{ backgroundColor: "#0A0112",width:"100%" }}>
+      <table  class="table text-white table-responsive p-3" style={{ backgroundColor: "#354C69",width:"100%" }}>
         <thead>
           <tr>
             <th scope="col">Date</th>
