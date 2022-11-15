@@ -335,8 +335,8 @@ const App = () => {
                 >
                <div style={{display:"flex",gap:3}}>
                 
-                  <img style={{width:30,borderRadius:100,height:30,marginTop:-2,position:"absolute",marginRight:8}} className="img-fluid" src="https://lykacoin.net/pinksale.png" alt="" />
-                  <p style={{color:"#280D81",fontWeight:"bold",backgroundColor:"#EFF4F5",borderRadius:20,paddingLeft:30,paddingRight:5,}}>BNB SMART CHAIN</p>
+                  <img style={{width:30,borderRadius:100,height:30,marginTop:-2,position:"absolute",marginLeft:-2}} className="img-fluid" src="https://www.pinksale.finance/static/media/ic-bsc.419dfaf2.png" alt="" />
+                  <p style={{color:"#280D81",fontWeight:"bold",backgroundColor:"#EFF4F5",borderRadius:20,paddingLeft:30,paddingRight:4,}}>BNB SMART CHAIN</p>
                </div>
                 </a>
                 <a
@@ -371,7 +371,7 @@ const App = () => {
           <div className="row">
             <div className="col-sm-6 mt-5">
               <div>
-                <h4 className="text-white">LYKA/BUSD</h4>
+                <h4 className="text-white d-flex"> <img style={{width:30,borderRadius:100,marginRight:2,marginLeft:2}} className="img-fluid" src="/lykatoken.png" alt="" /> LYKA / <img style={{width:30,borderRadius:100,marginRight:2,marginLeft:2}} className="img-fluid" src="https://tokens.pancakeswap.finance/images/symbol/busd.png" alt="" /> BUSD</h4>
                 <h1 style={{ fontWeight: "bold" }} className="text-white">
                   ${laykaPrice}
                 </h1>
@@ -491,7 +491,7 @@ const App = () => {
                       style={{ fontSize: 40 }}
                       className="text-center text-white mt-3"
                     >
-                      Swap
+                      DEX SWAP
                     </h4>
                     <div className="form-group m-4">
                       <div
@@ -755,17 +755,52 @@ const App = () => {
                 </div>
               </div>
               <div className="col-lg-3">
-                {/* <div className>
-          <h6 className="footer-heading text-uppercase text-white">Quick Link</h6>
-          <ul className="list-unstyled footer-link mt-4">
-            <li><a className="text-white" style={{textDecoration:"none"}} href>Monitoring Grader </a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href>Video Tutorial</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href>Term &amp; Service</a></li>
-            <li><a className="text-white" style={{textDecoration:"none"}} href>Zeeko API</a></li>
-          </ul>
-        </div> */}
+              <div className>
+                  <h6 className="footer-heading text-uppercase text-white">
+                   Social Media Links
+                  </h6>
+                  <ul className="list-unstyled footer-link mt-4">
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://twitter.com/lykacoin"
+                      >
+                        Telegram
+                      </a>
+                    </li>
+                   
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://twitter.com/lykacoin"
+                      >
+                       Twitter
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://www.youtube.com/channel/UC80qk5vgad9sMykF_bslMhw"
+                      >
+                        Youtube
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        className="text-white"
+                        style={{ textDecoration: "none" }}
+                        href="https://www.instagram.com/lykacoin/"
+                      >
+                       Instagram
+                      </a>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <div className="col-lg-2">
+              <div className="col-lg-3">
                 <div className>
                   <h6 className="footer-heading text-uppercase text-white">
                     Quick Link
@@ -819,7 +854,8 @@ const App = () => {
                   </ul>
                 </div>
               </div>
-              <div className="col-lg-4">
+              
+              <div className="col-lg-3">
                 <div className>
                   <h6 className="footer-heading text-uppercase text-white">
                     Quick Link
