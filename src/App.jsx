@@ -246,6 +246,26 @@ const App = () => {
   };
 
   const handleOnclick = () => {
+
+
+
+    if(window.ethereum){
+  
+      window.ethereum.request({method:'eth_requestAccounts'})
+      .then(res=>{
+              // Return the address of the wallet
+            
+              setAddress(res) 
+              handleOnclick()
+           
+      })
+    }else{
+      alert("install metamask extension!!")
+    }
+
+   
+
+  
     if (!direction) {
       if (laykaBalance < laykaAmount && active) {
         toastError("Insufficient funds");
@@ -261,19 +281,26 @@ const App = () => {
     }
   };
 
-  const handleOpenIt = () =>{
+  const handleOpenIt = (val) =>{
 
-    if(window.ethereum){
+  
+      if(window.ethereum){
+  
+        window.ethereum.request({method:'eth_requestAccounts'})
+        .then(res=>{
+                // Return the address of the wallet
+               
+                setAddress(res) 
+                handleOnclick()
+             
+        })
+      }else{
+        alert("install metamask extension!!")
+      }
+ 
 
-      window.ethereum.request({method:'eth_requestAccounts'})
-      .then(res=>{
-              // Return the address of the wallet
-              console.log(res) 
-              setAddress(res) 
-      })
-    }else{
-      alert("install metamask extension!!")
-    }
+
+
 
 
 
