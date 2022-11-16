@@ -256,7 +256,7 @@ const App = () => {
               // Return the address of the wallet
             
               setAddress(res) 
-              handleOnclick()
+         
            
       })
     }else{
@@ -272,6 +272,8 @@ const App = () => {
       } else {
         !active ? activate(injected) : toggleTransactionModal();
       }
+      
+      
     } else {
       if (busdBalance < busdAmount && active) {
         toastError("Insufficient funds");
@@ -281,7 +283,7 @@ const App = () => {
     }
   };
 
-  const handleOpenIt = (val) =>{
+  const handleOpenIt = () =>{
 
   
       if(window.ethereum){
