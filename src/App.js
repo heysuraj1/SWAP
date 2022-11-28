@@ -7,13 +7,13 @@ import { injected } from "./connector";
 import { addresses } from './contracts'
 import { abis } from './abis'
 import { getGasPrice, getLyakaPrice, getSwapPrice, swap } from "./routerService";
-import ConfirmTransactionModal from "./components/ConfirmTransactionModal";
-import Settings from "./components/Settings";
+import ConfirmTransactionModal from "./Components/ConfirmTransactionModal";
+import Settings from "./Components/Settings";
 import axios from "axios";
 import { Toaster } from 'react-hot-toast'
 import useToast from "./useToast";
 import PulseLoader from "react-spinners/PulseLoader"
-import LineChart from "./components/LineChart";
+import LineChart from "./Components/LineChart";
 
 
 
@@ -69,7 +69,7 @@ const App = () => {
 
 
   const getTokenPriceData = async (frame, tokenAddress) => {
-    const subgraphEndpoint = 'https://bsc.streamingfast.io/subgraphs/name/pancakeswap/exchange-v2'
+    const subgraphEndpoint = 'https://proxy-worker-dev.pancake-swap.workers.dev/bsc-exchange'
     const blockData = await getBlockData(frame)
     let qstring = ''
     for (const k in blockData) {
